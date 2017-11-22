@@ -24,4 +24,11 @@ func TestDecode(t *testing.T) {
 	if err != nil && err != io.EOF {
 		t.Fatal(err)
 	}
+	var resultat []rune
+	for _, idx := range res {
+		resultat = append(resultat, vocab.iToR[idx])
+	}
+	if string(resultat) != testData {
+		t.Fail()
+	}
 }
