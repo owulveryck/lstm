@@ -25,6 +25,11 @@ func NewDecoder(r io.Reader, breakPoint *regexp.Regexp, vocab *Vocab) *Decoder {
 	}
 }
 
+// SetBreakPoint sets the breakpoint to the regexp
+func (dec *Decoder) SetBreakPoint(re *regexp.Regexp) {
+	dec.breakPoint = re
+}
+
 // Decode reads the next characters from its input and stores it in the value pointed to by v.
 // if len(values) == 0, Decode reads until a breakPoint match, or until EOF
 // it returns the number of character read and an error
@@ -39,7 +44,7 @@ func (dec *Decoder) Decode(values *[]int) (int, error) {
 
 	var err error
 	var char rune
-	for n := 0; n < length || length == 0; n++ {
+	for n = 0; n < length || length == 0; n++ {
 		char, _, err = buf.ReadRune()
 		if err != nil {
 			break
@@ -50,6 +55,7 @@ func (dec *Decoder) Decode(values *[]int) (int, error) {
 		} else {
 			(*values)[n] = dec.vocab.rToI[char]
 		}
+
 		if dec.breakPoint != nil && dec.breakPoint.MatchString(string(char)) {
 			break
 		}

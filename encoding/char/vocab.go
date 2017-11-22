@@ -22,9 +22,6 @@ func (v Vocab) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary for restore
 func (v *Vocab) UnmarshalBinary(data []byte) error {
 	v.Letters = []rune(string(data))
-	if len(v.Letters) == 0 {
-		return errors.New("Vocab is empty")
-	}
 	return v.initMaps()
 }
 
