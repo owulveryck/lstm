@@ -29,12 +29,13 @@ func (m *Model) forwardPass(srcIndex int, prev *lstmOut) (retVal *lstmOut, err e
 
 	inputVector := m.inputVector
 	inputValue := make([]float32, m.inputSize)
-	inputValue[srcIndex] = 1
+	inputValue[srcIndex] = 1.0
+	inputVectorT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.inputSize), tensor.WithBacking(inputValue))
 
 	var hiddens, cells G.Nodes
 	for i, l := range m.ls {
 		if i == 0 {
-			inputVector = G.NewVector(m.g, tensor.Float32, G.WithName("InputVector0"), G.WithShape(m.inputSize), G.WithValue(inputValue))
+			inputVector = G.NewVector(m.g, tensor.Float32, G.WithName("InputVector0"), G.WithShape(m.inputSize), G.WithValue(inputVectorT))
 		} else {
 			inputVector = hiddens[i-1]
 		}

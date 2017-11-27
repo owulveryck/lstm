@@ -2,13 +2,19 @@ package lstm
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	G "gorgonia.org/gorgonia"
 )
 
 // Predict the next elements that comes after args
-func (m *Model) Predict(ctx context.Context, args []int) <-chan int {
+func (m *Model) Predict(ctx context.Context, args []int) (<-chan int, error) {
+	for _, v := range args {
+		if v > m.inputSize {
+			return nil, fmt.Errorf("value %v in not in the range of the input neurons")
+		}
+	}
 	feed := make(chan int)
 	go func() {
 		var prev *lstmOut
@@ -29,8 +35,10 @@ func (m *Model) Predict(ctx context.Context, args []int) <-chan int {
 			if err := machine.RunAll(); err != nil {
 				log.Printf("ERROR1 while predicting with %p %+v", machine, err)
 			}
+			if i < len(args) {
+				continue
+			}
 
-			//sampledID := sample(prev.probs.Value())
 			select {
 			case <-ctx.Done():
 				m.g.UnbindAllNonInputs()
@@ -40,5 +48,5 @@ func (m *Model) Predict(ctx context.Context, args []int) <-chan int {
 			m.g.UnbindAllNonInputs()
 		}
 	}()
-	return feed
+	return feed, nil
 }
