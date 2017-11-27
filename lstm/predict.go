@@ -9,7 +9,8 @@ import (
 )
 
 // Predict the next elements that comes after args
-func (m *Model) Predict(ctx context.Context, args []int) (<-chan int, error) {
+// Predict applies the decision function to the array
+func (m *Model) Predict(ctx context.Context, args []int, decision func([]float32) int) (<-chan int, error) {
 	for _, v := range args {
 		if v > m.inputSize {
 			return nil, fmt.Errorf("value %v in not in the range of the input neurons")
@@ -43,7 +44,7 @@ func (m *Model) Predict(ctx context.Context, args []int) (<-chan int, error) {
 			case <-ctx.Done():
 				m.g.UnbindAllNonInputs()
 				return // returning not to leak the goroutine
-			case feed <- 0:
+			case feed <- decision(prev.probs.Value().Data().([]float32)):
 			}
 			m.g.UnbindAllNonInputs()
 		}
