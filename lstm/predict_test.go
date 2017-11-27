@@ -2,7 +2,6 @@ package lstm
 
 import (
 	"context"
-	"log"
 	"testing"
 )
 
@@ -23,7 +22,8 @@ func TestPredict(t *testing.T) {
 	if err == nil {
 		t.Fail()
 	}
-	f, err := model.Predict(context.TODO(), []int{4, 2, 1}, best)
+	ctx, cancel := context.WithCancel(context.Background())
+	f, err := model.Predict(ctx, []int{4, 2, 1}, best)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,9 +31,9 @@ func TestPredict(t *testing.T) {
 	for v := range f {
 		i++
 		if i > 5 {
-			break
+			cancel()
 		}
-		log.Println(v)
+		t.Log(v)
 	}
 
 }

@@ -43,6 +43,7 @@ func (m *Model) Predict(ctx context.Context, args []int, decision func([]float32
 			select {
 			case <-ctx.Done():
 				m.g.UnbindAllNonInputs()
+				close(feed)
 				return // returning not to leak the goroutine
 			case feed <- decision(prev.probs.Value().Data().([]float32)):
 			}
