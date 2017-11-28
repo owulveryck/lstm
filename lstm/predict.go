@@ -32,7 +32,7 @@ func (m *Model) Predict(ctx context.Context, args []int, decision func([]float32
 			}
 			g := m.g.SubgraphRoots(prev.probs)
 			machine := G.NewLispMachine(g, G.ExecuteFwdOnly())
-			machine.ForceCPU()
+			//machine.ForceCPU()
 			if err := machine.RunAll(); err != nil {
 				log.Printf("ERROR1 while predicting with %p %+v", machine, err)
 			}
@@ -40,12 +40,14 @@ func (m *Model) Predict(ctx context.Context, args []int, decision func([]float32
 				continue
 			}
 
+			id = decision(prev.probs.Value().Data().([]float32))
+
 			select {
 			case <-ctx.Done():
 				m.g.UnbindAllNonInputs()
 				close(feed)
 				return // returning not to leak the goroutine
-			case feed <- decision(prev.probs.Value().Data().([]float32)):
+			case feed <- id:
 			}
 			m.g.UnbindAllNonInputs()
 		}

@@ -11,6 +11,7 @@ func TestPredict(t *testing.T) {
 		idx := 0
 		for i, v := range vals {
 			if v > best {
+				best = v
 				idx = i
 
 			}
@@ -28,12 +29,11 @@ func TestPredict(t *testing.T) {
 		t.Fatal(err)
 	}
 	i := 0
-	for v := range f {
+	for _ = range f {
 		i++
 		if i > 5 {
 			cancel()
 		}
-		t.Log(v)
 	}
 
 }

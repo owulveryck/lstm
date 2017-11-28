@@ -4,12 +4,12 @@ import (
 	"math"
 	"runtime"
 
-	"gorgonia.org/gorgonia"
+	G "gorgonia.org/gorgonia"
 )
 
-func (m *Model) inputs() (retVal gorgonia.Nodes) {
+func (m *Model) inputs() (retVal G.Nodes) {
 	for _, l := range m.ls {
-		lin := gorgonia.Nodes{
+		lin := G.Nodes{
 			l.wix,
 			l.wih,
 			l.biasI,
@@ -34,10 +34,10 @@ func (m *Model) inputs() (retVal gorgonia.Nodes) {
 
 // Train the neural network by giving him a source and an expected target
 // solver is the algo used to adapt the gradient
-func (m *Model) Train(source, target []int, solver gorgonia.Solver) (retCost, retPerp float32, err error) {
+func (m *Model) Train(source, target []int, solver G.Solver) (retCost, retPerp float32, err error) {
 	defer runtime.GC()
 
-	var cost, perp *gorgonia.Node
+	var cost, perp *G.Node
 	var n int
 
 	cost, perp, n, err = m.cost(source, target)
@@ -45,21 +45,21 @@ func (m *Model) Train(source, target []int, solver gorgonia.Solver) (retCost, re
 		return
 	}
 
-	var readCost *gorgonia.Node
-	var readPerp *gorgonia.Node
-	var costVal gorgonia.Value
-	var perpVal gorgonia.Value
+	var readCost *G.Node
+	var readPerp *G.Node
+	var costVal G.Value
+	var perpVal G.Value
 
-	var g *gorgonia.ExprGraph
+	var g *G.ExprGraph
 	//if iter%100 == 0 {
-	readPerp = gorgonia.Read(perp, &perpVal)
-	readCost = gorgonia.Read(cost, &costVal)
+	readPerp = G.Read(perp, &perpVal)
+	readCost = G.Read(cost, &costVal)
 	g = m.g.SubgraphRoots(cost, readPerp, readCost)
 	//} else {
 	//	g = m.g.SubgraphRoots(cost)
 	//}
 
-	machine := gorgonia.NewLispMachine(g)
+	machine := G.NewLispMachine(g, G.UseCudaFor("tanh", "mul", "exp", "sigmoid"))
 	if err = machine.RunAll(); err != nil {
 		return
 	}
@@ -71,11 +71,11 @@ func (m *Model) Train(source, target []int, solver gorgonia.Solver) (retCost, re
 	}
 
 	//if iter%100 == 0 {
-	if sv, ok := perpVal.(gorgonia.Scalar); ok {
+	if sv, ok := perpVal.(G.Scalar); ok {
 		v := sv.Data().(float32)
 		retPerp = float32(math.Pow(2, float64(v)/(float64(n)-1)))
 	}
-	if cv, ok := costVal.(gorgonia.Scalar); ok {
+	if cv, ok := costVal.(G.Scalar); ok {
 		retCost = cv.Data().(float32)
 	}
 	//}
