@@ -34,13 +34,15 @@ func (m *Model) inputs() (retVal G.Nodes) {
 
 // Train the neural network by giving him a source and an expected target
 // solver is the algo used to adapt the gradient
-func (m *Model) Train(source, target []int, solver G.Solver) (retCost, retPerp float32, err error) {
+func (m *Model) Train(source, target []int, evaluate bool, solver G.Solver) (retCost, retPerp float32, err error) {
 	defer runtime.GC()
 
-	var cost, perp *G.Node
+	var cost *G.Node
+	var perp *G.Node
 	var n int
 
 	cost, perp, n, err = m.cost(source, target)
+	cost, _, n, err = m.cost(source, target)
 	if err != nil {
 		return
 	}
@@ -51,13 +53,13 @@ func (m *Model) Train(source, target []int, solver G.Solver) (retCost, retPerp f
 	var perpVal G.Value
 
 	var g *G.ExprGraph
-	//if iter%100 == 0 {
-	readPerp = G.Read(perp, &perpVal)
-	readCost = G.Read(cost, &costVal)
-	g = m.g.SubgraphRoots(cost, readPerp, readCost)
-	//} else {
-	//	g = m.g.SubgraphRoots(cost)
-	//}
+	if evaluate {
+		readPerp = G.Read(perp, &perpVal)
+		readCost = G.Read(cost, &costVal)
+		g = m.g.SubgraphRoots(cost, readPerp, readCost)
+	} else {
+		g = m.g.SubgraphRoots(cost)
+	}
 
 	machine := G.NewLispMachine(g, G.UseCudaFor("tanh", "mul", "exp", "sigmoid"))
 	if err = machine.RunAll(); err != nil {
@@ -70,14 +72,14 @@ func (m *Model) Train(source, target []int, solver G.Solver) (retCost, retPerp f
 		return
 	}
 
-	//if iter%100 == 0 {
-	if sv, ok := perpVal.(G.Scalar); ok {
-		v := sv.Data().(float32)
-		retPerp = float32(math.Pow(2, float64(v)/(float64(n)-1)))
+	if evaluate {
+		if sv, ok := perpVal.(G.Scalar); ok {
+			v := sv.Data().(float32)
+			retPerp = float32(math.Pow(2, float64(v)/(float64(n)-1)))
+		}
+		if cv, ok := costVal.(G.Scalar); ok {
+			retCost = cv.Data().(float32)
+		}
 	}
-	if cv, ok := costVal.(G.Scalar); ok {
-		retCost = cv.Data().(float32)
-	}
-	//}
 	return
 }
