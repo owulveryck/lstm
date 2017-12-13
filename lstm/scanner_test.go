@@ -1,6 +1,7 @@
 package lstm_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -39,4 +40,21 @@ func TestScanner_Scan(t *testing.T) {
 			t.Errorf("%d. %q literal mismatch: exp=%q got=%q", i, tt.s, tt.lit, lit)
 		}
 	}
+}
+
+func ExampleScan() {
+	s := lstm.NewScanner(strings.NewReader(`Wh·xₜ₋₁+yₐ`))
+	var tok lstm.Token
+	var lit string
+	for tok != lstm.EOF {
+		tok, lit = s.Scan()
+		fmt.Printf("<%v>%v\n", tok, lit)
+	}
+	// Output:
+	//<3>Wh
+	//<4>·
+	//<3>xₜ₋₁
+	//<6>+
+	//<3>yₐ
+	//<1>
 }
