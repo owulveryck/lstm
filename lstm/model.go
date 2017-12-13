@@ -51,5 +51,5 @@ func (m *lstm) step(cₜₜ, hₜₜ, xₜ *G.Node) (cₜ, hₜ *G.Node) {
 	// hₜ= oₜ* tanh(Cₜ)
 	hₜ = op(oₜ, '*', tanh(cₜ))
 
-	return nil, nil
+	return
 }
