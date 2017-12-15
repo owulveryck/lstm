@@ -27,25 +27,27 @@ import (
 %}
 
 %union {
-	num *big.Rat
+	node *G.Node
 }
 
-%type	<num>	expr expr1 expr2 expr3
+%type	<node>	expr expr1 expr2 expr3
 
-%token '+' '-' '*' '/' '(' ')'
+%token '+' '·' '-' '*' '/' '(' ')'
 
-%token	<num>	NUM
+%token	<node>	NODE
 
 %%
 
 top:
 	expr
 	{
+/*
 		if $1.IsInt() {
 			fmt.Println($1.Num().String())
 		} else {
 			fmt.Println($1.String())
 		}
+*/
 	}
 
 expr:
@@ -82,7 +84,7 @@ expr2:
 	}
 
 expr3:
-	NUM
+	NODE
 |	'(' expr ')'
 	{
 		$$ = $2
@@ -103,7 +105,7 @@ type exprLex struct {
 }
 
 // The parser calls this method to get each new token. This
-// implementation returns operators and NUM.
+// implementation returns operators and NODE.
 func (x *exprLex) Lex(yylval *exprSymType) int {
 	for {
 		c := x.next()
@@ -111,7 +113,7 @@ func (x *exprLex) Lex(yylval *exprSymType) int {
 		case eof:
 			return eof
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			return x.num(c, yylval)
+			return x.node(c, yylval)
 		case '+', '-', '*', '/', '(', ')':
 			return int(c)
 
@@ -124,9 +126,40 @@ func (x *exprLex) Lex(yylval *exprSymType) int {
 
 		case ' ', '\t', '\n', '\r':
 		default:
-			log.Printf("unrecognized character %q", c)
+			return x.ident(c, yylval)
 		}
 	}
+}
+
+// Lex a number.
+func (x *exprLex) ident(c rune, yylval *exprSymType) int {
+	add := func(b *bytes.Buffer, c rune) {
+		if _, err := b.WriteRune(c); err != nil {
+			log.Fatalf("WriteRune: %s", err)
+		}
+	}
+	var b bytes.Buffer
+	add(&b, c)
+	L: for {
+		c = x.next()
+		switch c {
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', 'e', 'E':
+			add(&b, c)
+		default:
+			break L
+		}
+	}
+	if c != eof {
+		x.peek = c
+	}
+        // OWK Here we analyse the dictionnary
+	yylval.node = &big.Rat{}
+	_, ok := yylval.node.SetString(b.String())
+	if !ok {
+		log.Printf("bad number %q", b.String())
+		return eof
+	}
+	return NODE
 }
 
 // Lex a number.
@@ -150,13 +183,14 @@ func (x *exprLex) num(c rune, yylval *exprSymType) int {
 	if c != eof {
 		x.peek = c
 	}
-	yylval.num = &big.Rat{}
-	_, ok := yylval.num.SetString(b.String())
+        // OWK Here we analyse the dictionnary
+	yylval.node = &big.Rat{}
+	_, ok := yylval.node.SetString(b.String())
 	if !ok {
 		log.Printf("bad number %q", b.String())
 		return eof
 	}
-	return NUM
+	return NODE
 }
 
 // Return the next rune for the lexer.
