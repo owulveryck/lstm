@@ -22,6 +22,7 @@ import (
 	"math/big"
 	"os"
 	"unicode/utf8"
+        G "gorgonia.org/gorgonia"
 )
 
 %}
@@ -41,6 +42,7 @@ import (
 top:
 	expr
 	{
+                log.Println($1)
 /*
 		if $1.IsInt() {
 			fmt.Println($1.Num().String())
@@ -58,29 +60,29 @@ expr:
 	}
 |	'-' expr
 	{
-		$$ = $2.Neg($2)
+		$$ = G.Must(G.Neg($2))
 	}
 
 expr1:
 	expr2
 |	expr1 '+' expr2
 	{
-		$$ = $1.Add($1, $3)
+                $$ = G.Must(G.Add($1,$3))
 	}
 |	expr1 '-' expr2
 	{
-		$$ = $1.Sub($1, $3)
+                $$ = G.Must(G.Sub($1,$3))
 	}
 
 expr2:
 	expr3
 |	expr2 '*' expr3
 	{
-		$$ = $1.Mul($1, $3)
+                $$ = G.Must(G.Mul($1,$3))
 	}
 |	expr2 '/' expr3
 	{
-		$$ = $1.Quo($1, $3)
+                $$ = G.Must(G.Div($1,$3))
 	}
 
 expr3:
@@ -102,6 +104,12 @@ const eof = 0
 type exprLex struct {
 	line []byte
 	peek rune
+        dico map[string]*G.Node
+}
+
+// Let assigns insert a node into de dictionary represented by the identifier
+func (x *exprLex) Let(ident  string, value *G.Node) {
+        x.dico[ident] = value
 }
 
 // The parser calls this method to get each new token. This
@@ -113,7 +121,7 @@ func (x *exprLex) Lex(yylval *exprSymType) int {
 		case eof:
 			return eof
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			return x.node(c, yylval)
+			return x.num(c, yylval)
 		case '+', '-', '*', '/', '(', ')':
 			return int(c)
 
@@ -123,7 +131,6 @@ func (x *exprLex) Lex(yylval *exprSymType) int {
 			return '*'
 		case '÷':
 			return '/'
-
 		case ' ', '\t', '\n', '\r':
 		default:
 			return x.ident(c, yylval)
@@ -153,12 +160,13 @@ func (x *exprLex) ident(c rune, yylval *exprSymType) int {
 		x.peek = c
 	}
         // OWK Here we analyse the dictionnary
-	yylval.node = &big.Rat{}
-	_, ok := yylval.node.SetString(b.String())
+	yylval.node = &G.Node{}
+        val, ok := x.dico[b.String()]
 	if !ok {
-		log.Printf("bad number %q", b.String())
+		log.Printf("Value %q does not exist in the dictionnary", b.String())
 		return eof
 	}
+	yylval.node = val
 	return NODE
 }
 
@@ -184,12 +192,13 @@ func (x *exprLex) num(c rune, yylval *exprSymType) int {
 		x.peek = c
 	}
         // OWK Here we analyse the dictionnary
-	yylval.node = &big.Rat{}
-	_, ok := yylval.node.SetString(b.String())
+	yylval.node = &G.Node{}
+        val, ok := x.dico[b.String()]
 	if !ok {
-		log.Printf("bad number %q", b.String())
+		log.Printf("Value %q does not exist in the dictionnary", b.String())
 		return eof
 	}
+	yylval.node = val
 	return NODE
 }
 
