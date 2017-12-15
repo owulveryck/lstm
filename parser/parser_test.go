@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/chewxy/gorgonia/tensor"
@@ -28,12 +29,13 @@ func TestParse(t *testing.T) {
 	p.Set(`hₜ₋₁`, htprev)
 	p.Set(`xₜ`, xt)
 	p.Set(`bh`, bf)
-	node, err := p.Parse(`Wf·hₜ₋₁+ Wf·xₜ+ bf`)
+	_, err := p.Parse(`Wf·hₜ₋₁+ Wf·xₜ+ bf`)
 	if err != nil {
-		t.Fatal(err)
+		//		t.Fatal(err)
 	}
-	σ(node)
+	fmt.Println(g.ToDot())
+	//σ(node)
 	// fₜ= σ(Wf·hₜ₋₁+ Wf·xₜ+ bf)
-	//fmt.Println(g.ToDot())
+	fmt.Println(g.ToDot())
 
 }

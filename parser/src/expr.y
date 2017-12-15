@@ -113,7 +113,7 @@ func (x *exprLex) Lex(yylval *gorgoniaSymType) int {
 			return eof
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			return x.num(c, yylval)
-		case '+', '-', '*', '/', '(', ')':
+		case '+', '-', '*', '·', '/', '(', ')':
 			return int(c)
 
 		// Recognize Unicode multiplication and division
@@ -129,6 +129,10 @@ func (x *exprLex) Lex(yylval *gorgoniaSymType) int {
 	}
 }
 
+func isChar(ch rune) bool {
+        return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || string(ch) == `ₜ` || string(ch) == `₋` || string(ch) == `₁`
+}
+
 // Lex a number.
 func (x *exprLex) ident(c rune, yylval *gorgoniaSymType) int {
 	add := func(b *bytes.Buffer, c rune) {
@@ -140,8 +144,8 @@ func (x *exprLex) ident(c rune, yylval *gorgoniaSymType) int {
 	add(&b, c)
 	L: for {
 		c = x.next()
-		switch c {
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', 'e', 'E':
+		switch  {
+		case isChar(c):
 			add(&b, c)
 		default:
 			break L
