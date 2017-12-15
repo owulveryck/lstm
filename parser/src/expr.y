@@ -11,22 +11,18 @@
 
 %{
 
-package main
+package parser
 
 import (
-	"bufio"
 	"bytes"
-	"fmt"
-	"io"
 	"log"
-	"math/big"
-	"os"
 	"unicode/utf8"
         G "gorgonia.org/gorgonia"
 )
 
 %}
 
+// gorgoniaSymType ...
 %union {
 	node *G.Node
 }
@@ -42,14 +38,8 @@ import (
 top:
 	expr
 	{
-                log.Println($1)
-/*
-		if $1.IsInt() {
-			fmt.Println($1.Num().String())
-		} else {
-			fmt.Println($1.String())
-		}
-*/
+                gorgonialex.(*exprLex).result = $1
+                
 	}
 
 expr:
@@ -105,6 +95,7 @@ type exprLex struct {
 	line []byte
 	peek rune
         dico map[string]*G.Node
+        result *G.Node
 }
 
 // Let assigns insert a node into de dictionary represented by the identifier
@@ -114,7 +105,7 @@ func (x *exprLex) Let(ident  string, value *G.Node) {
 
 // The parser calls this method to get each new token. This
 // implementation returns operators and NODE.
-func (x *exprLex) Lex(yylval *exprSymType) int {
+func (x *exprLex) Lex(yylval *gorgoniaSymType) int {
 	for {
 		c := x.next()
 		switch c {
@@ -139,7 +130,7 @@ func (x *exprLex) Lex(yylval *exprSymType) int {
 }
 
 // Lex a number.
-func (x *exprLex) ident(c rune, yylval *exprSymType) int {
+func (x *exprLex) ident(c rune, yylval *gorgoniaSymType) int {
 	add := func(b *bytes.Buffer, c rune) {
 		if _, err := b.WriteRune(c); err != nil {
 			log.Fatalf("WriteRune: %s", err)
@@ -171,7 +162,7 @@ func (x *exprLex) ident(c rune, yylval *exprSymType) int {
 }
 
 // Lex a number.
-func (x *exprLex) num(c rune, yylval *exprSymType) int {
+func (x *exprLex) num(c rune, yylval *gorgoniaSymType) int {
 	add := func(b *bytes.Buffer, c rune) {
 		if _, err := b.WriteRune(c); err != nil {
 			log.Fatalf("WriteRune: %s", err)
@@ -226,6 +217,7 @@ func (x *exprLex) Error(s string) {
 	log.Printf("parse error: %s", s)
 }
 
+/*
 func main() {
 	in := bufio.NewReader(os.Stdin)
 	for {
@@ -243,3 +235,4 @@ func main() {
 		exprParse(&exprLex{line: line})
 	}
 }
+*/

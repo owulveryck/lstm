@@ -7,7 +7,7 @@
 //	% go generate
 //	% go build
 
-//go:generate goyacc -o expr.go -p "Gorgonia" expr.y
+//go:generate goyacc -o ../expr.go -p "gorgonia" expr.y
 
 // Expr is a simple expression evaluator that serves as a working example of
 // how to use Go's yacc implementation.
