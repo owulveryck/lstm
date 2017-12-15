@@ -28,13 +28,12 @@ func TestParse(t *testing.T) {
 	p.Set(`Wf`, wf)
 	p.Set(`hₜ₋₁`, htprev)
 	p.Set(`xₜ`, xt)
-	p.Set(`bh`, bf)
-	_, err := p.Parse(`Wf·hₜ₋₁+ Wf·xₜ+ bf`)
+	p.Set(`bf`, bf)
+	node, err := p.Parse(`Wf·hₜ₋₁+ Wf·xₜ+ bf`)
 	if err != nil {
 		//		t.Fatal(err)
 	}
-	fmt.Println(g.ToDot())
-	//σ(node)
+	σ(node)
 	// fₜ= σ(Wf·hₜ₋₁+ Wf·xₜ+ bf)
 	fmt.Println(g.ToDot())
 

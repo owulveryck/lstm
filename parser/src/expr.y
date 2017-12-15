@@ -66,9 +66,13 @@ expr1:
 
 expr2:
 	expr3
-|	expr2 '*' expr3
+|	expr2 '·' expr3
 	{
                 $$ = G.Must(G.Mul($1,$3))
+	}
+|	expr2 '*' expr3
+	{
+                $$ = G.Must(G.HadamardProd($1,$3))
 	}
 |	expr2 '/' expr3
 	{
