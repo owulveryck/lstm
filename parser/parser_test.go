@@ -1,12 +1,11 @@
 package parser_test
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/chewxy/gorgonia/tensor"
 	"github.com/owulveryck/charRNN/parser"
 	G "gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
 func σ(a *G.Node) *G.Node {
@@ -29,12 +28,18 @@ func TestParse(t *testing.T) {
 	p.Set(`hₜ₋₁`, htprev)
 	p.Set(`xₜ`, xt)
 	p.Set(`bf`, bf)
-	node, err := p.Parse(`Wf·hₜ₋₁+ Wf·xₜ+ bf`)
-	if err != nil {
-		//		t.Fatal(err)
+	result, _ := p.Parse(`Wf·hₜ₋₁+ Wf·xₜ+ bf`)
+	//result, _ := p.Parse(`Wf·hₜ₋₁`)
+	//result = σ(result)
+	machine := G.NewLispMachine(g, G.ExecuteFwdOnly())
+	if err := machine.RunAll(); err != nil {
+		t.Fatal(err)
 	}
-	σ(node)
-	// fₜ= σ(Wf·hₜ₋₁+ Wf·xₜ+ bf)
-	fmt.Println(g.ToDot())
-
+	res := result.Value().Data().([]float32)
+	if len(res) != 2 {
+		t.Fail()
+	}
+	if res[0] != 5 && res[1] != 5 {
+		t.Fail()
+	}
 }
