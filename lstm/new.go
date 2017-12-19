@@ -206,12 +206,12 @@ func newModelFromBackends(back *backends) *Model {
 		wohT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.Woh[depth]))
 		biasOT := tensor.New(tensor.WithBacking(back.BiasO[depth]), tensor.WithShape(hiddenSize))
 
-		l.wox = G.NewMatrix(g, tensor.Float32, G.WithName("wox_"+layerID), G.WithShape(hiddenSize, prevSize), G.WithValue(woxT))
-		l.woh = G.NewMatrix(g, tensor.Float32, G.WithName("woh_"+layerID), G.WithShape(hiddenSize, hiddenSize), G.WithValue(wohT))
-		l.biasO = G.NewVector(g, tensor.Float32, G.WithName("biasO_"+layerID), G.WithShape(hiddenSize), G.WithValue(biasOT))
-		p.Set(`Wₒ`, l.wix)
-		p.Set(`Uₒ`, l.wih)
-		p.Set(`Bₒ`, l.biasI)
+		l.wox = G.NewMatrix(g, tensor.Float32, G.WithName("Wₒ["+layerID+"]"), G.WithShape(hiddenSize, prevSize), G.WithValue(woxT))
+		l.woh = G.NewMatrix(g, tensor.Float32, G.WithName("Uₒ["+layerID+"]"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(wohT))
+		l.biasO = G.NewVector(g, tensor.Float32, G.WithName("Bₒ["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(biasOT))
+		p.Set(`Wₒ`, l.wox)
+		p.Set(`Uₒ`, l.woh)
+		p.Set(`Bₒ`, l.biasO)
 
 		// forget gate weights
 
@@ -219,12 +219,12 @@ func newModelFromBackends(back *backends) *Model {
 		wfhT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.Wfh[depth]))
 		biasFT := tensor.New(tensor.WithBacking(back.BiasF[depth]), tensor.WithShape(hiddenSize))
 
-		l.wfx = G.NewMatrix(g, tensor.Float32, G.WithName("wfx_"+layerID), G.WithShape(hiddenSize, prevSize), G.WithValue(wfxT))
-		l.wfh = G.NewMatrix(g, tensor.Float32, G.WithName("wfh_"+layerID), G.WithShape(hiddenSize, hiddenSize), G.WithValue(wfhT))
-		l.biasF = G.NewVector(g, tensor.Float32, G.WithName("biasF_"+layerID), G.WithShape(hiddenSize), G.WithValue(biasFT))
-		p.Set(`Wf`, l.wix)
-		p.Set(`Uf`, l.wih)
-		p.Set(`Bf`, l.biasI)
+		l.wfx = G.NewMatrix(g, tensor.Float32, G.WithName("Wf["+layerID+"]"), G.WithShape(hiddenSize, prevSize), G.WithValue(wfxT))
+		l.wfh = G.NewMatrix(g, tensor.Float32, G.WithName("Uf["+layerID+"]"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(wfhT))
+		l.biasF = G.NewVector(g, tensor.Float32, G.WithName("Bf["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(biasFT))
+		p.Set(`Wf`, l.wfx)
+		p.Set(`Uf`, l.wfh)
+		p.Set(`Bf`, l.biasF)
 
 		// cell write
 
@@ -232,18 +232,18 @@ func newModelFromBackends(back *backends) *Model {
 		wchT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.Wch[depth]))
 		biasCT := tensor.New(tensor.WithBacking(back.BiasC[depth]), tensor.WithShape(hiddenSize))
 
-		l.wcx = G.NewMatrix(g, tensor.Float32, G.WithName("wcx_"+layerID), G.WithShape(hiddenSize, prevSize), G.WithValue(wcxT))
-		l.wch = G.NewMatrix(g, tensor.Float32, G.WithName("wch_"+layerID), G.WithShape(hiddenSize, hiddenSize), G.WithValue(wchT))
-		l.biasC = G.NewVector(g, tensor.Float32, G.WithName("biasC_"+layerID), G.WithShape(hiddenSize), G.WithValue(biasCT))
-		p.Set(`Wc`, l.wix)
-		p.Set(`Uc`, l.wih)
-		p.Set(`Bc`, l.biasI)
+		l.wcx = G.NewMatrix(g, tensor.Float32, G.WithName("Wc["+layerID+"]"), G.WithShape(hiddenSize, prevSize), G.WithValue(wcxT))
+		l.wch = G.NewMatrix(g, tensor.Float32, G.WithName("Uc["+layerID+"]"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(wchT))
+		l.biasC = G.NewVector(g, tensor.Float32, G.WithName("bc["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(biasCT))
+		p.Set(`Wc`, l.wcx)
+		p.Set(`Uc`, l.wch)
+		p.Set(`Bc`, l.biasC)
 
 		// this is to simulate a default "previous" state
 		hiddenT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
 		cellT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
-		hidden := G.NewVector(g, tensor.Float32, G.WithName("prevHidden_"+layerID), G.WithShape(hiddenSize), G.WithValue(hiddenT))
-		cell := G.NewVector(g, tensor.Float32, G.WithName("prevCell_"+layerID), G.WithShape(hiddenSize), G.WithValue(cellT))
+		hidden := G.NewVector(g, tensor.Float32, G.WithName("hₜ₋₁["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(hiddenT))
+		cell := G.NewVector(g, tensor.Float32, G.WithName("Cₜ₋₁["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(cellT))
 
 		hiddens = append(hiddens, hidden)
 		cells = append(cells, cell)
@@ -259,7 +259,7 @@ func newModelFromBackends(back *backends) *Model {
 
 	// these are to simulate a previous state
 	dummyInputVec := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(back.InputSize)) // zeroes
-	m.inputVector = G.NewVector(g, tensor.Float32, G.WithName("inputVector_"), G.WithShape(back.InputSize), G.WithValue(dummyInputVec))
+	m.inputVector = G.NewVector(g, tensor.Float32, G.WithName("xₜ"), G.WithShape(back.InputSize), G.WithValue(dummyInputVec))
 	m.prevHiddens = hiddens
 	m.prevCells = cells
 

@@ -14,8 +14,8 @@ func (l *lstm) fwd(inputVector, prevHidden, prevCell *G.Node) (hidden, cell *G.N
 	l.parser.Set(`xₜ`, inputVector)
 	l.parser.Set(`hₜ₋₁`, prevHidden)
 	l.parser.Set(`cₜ₋₁`, prevCell)
-	l.parser.Set(`fₜ`, σ(l, `Wf·xₜ+Uf·hₜ₋₁+Bf`)) // dot product made with ctrl+k . M
 	l.parser.Set(`iₜ`, σ(l, `Wᵢ·xₜ+Uᵢ·hₜ₋₁+Bᵢ`))
+	l.parser.Set(`fₜ`, σ(l, `Wf·xₜ+Uf·hₜ₋₁+Bf`)) // dot product made with ctrl+k . M
 	l.parser.Set(`oₜ`, σ(l, `Wₒ·xₜ+Uₒ·hₜ₋₁+Bₒ`))
 	// ċₜis a vector of new candidates value
 	l.parser.Set(`ĉₜ`, tanh(l, `Wc·xₜ+Uc·hₜ₋₁+Bc`)) // c made with ctrl+k c >
