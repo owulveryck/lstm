@@ -1,0 +1,61 @@
+package lstm
+
+import (
+	"github.com/owulveryck/charRNN/parser"
+	G "gorgonia.org/gorgonia"
+)
+
+type LSTM struct {
+	wf *G.Node
+	bf *G.Node
+	wi *G.Node
+	bi *G.Node
+	wo *G.Node
+	bo *G.Node
+	wc *G.Node
+	bc *G.Node
+	g  G.ExprGraph
+	p  *parser.Parser
+}
+
+// NewLSTM returns a new LSTM
+func NewLSTM(inputSize, outputSize, hiddenSize int) *LSTM {
+	p := parser.NewParser()
+	p.Set(`Wf`, m.wf)
+	p.Set(`hₜ₋₁`, hprev)
+	p.Set(`xₜ`, xt)
+	p.Set(`bf`, m.bf)
+	p.Set(`bi`, m.bi)
+}
+
+func σ(a *G.Node) *G.Node {
+	return G.Must(G.Sigmoid(a))
+}
+
+func tanh(a *G.Node) *G.Node {
+	return G.Must(G.Tanh(a))
+}
+
+func (m *LSTM) step(cprev, hprev, xt *G.Node) (ct, ht *G.Node) {
+	p := parser.NewParser()
+	p.Set(`Wf`, m.wf)
+	p.Set(`hₜ₋₁`, hprev)
+	p.Set(`xₜ`, xt)
+	p.Set(`bf`, m.bf)
+	p.Set(`bi`, m.bi)
+	// fₜ= σ(Wf·[hₜ₋₁,xₜ] + bf)
+	// fₜ= σ(Wf·hₜ₋₁+ Wf·xₜ+ bf)
+	//fₜ := σ(op(op(op(m.wf, '·', xₜ), '+', op(m.wf, '·', hₜₜ)), '+', m.bf))
+	// iₜ= σ(Wi·[hₜ₋₁,xₜ] + bi)
+	//iₜ := σ(op(op(op(m.wi, '·', xₜ), '+', op(m.wi, '·', hₜₜ)), '+', m.bi))
+	// Ĉₜ= tanh(Wc·[hₜ₋₁,xₜ] + bc)
+	//Ĉₜ := tanh(op(op(op(m.wc, '·', xₜ), '+', op(m.wc, '·', hₜₜ)), '+', m.bc))
+	// Cₜ= fₜ* Cₜ₋₁+ iₜ* Ĉₜ
+	//cₜ = op(op(fₜ, '*', cₜₜ), '+', op(iₜ, '*', Ĉₜ))
+	// oₜ= σ(Wo·[hₜ₋₁,xₜ] + bo)
+	//oₜ := σ(op(op(op(m.wo, '·', xₜ), '+', op(m.wo, '·', hₜₜ)), '+', m.bo))
+	// hₜ= oₜ* tanh(Cₜ)
+	//hₜ = op(oₜ, '*', tanh(cₜ))
+
+	return
+}

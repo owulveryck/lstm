@@ -32,6 +32,7 @@ func TestParse(t *testing.T) {
 	//result, _ := p.Parse(`Wf·hₜ₋₁`)
 	//result = σ(result)
 	machine := G.NewLispMachine(g, G.ExecuteFwdOnly())
+	//machine := G.NewTapeMachine(g)
 	if err := machine.RunAll(); err != nil {
 		t.Fatal(err)
 	}

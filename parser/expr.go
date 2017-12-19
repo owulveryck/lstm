@@ -85,7 +85,7 @@ func (x *exprLex) Lex(yylval *gorgoniaSymType) int {
 }
 
 func isChar(ch rune) bool {
-	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || string(ch) == `ₜ` || string(ch) == `₋` || string(ch) == `₁`
+	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || (ch >= '₀' && ch <= 'ₜ') || ch == 'ᵢ'
 }
 
 // Lex a number.
