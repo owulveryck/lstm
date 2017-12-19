@@ -23,12 +23,15 @@ func TestParse(t *testing.T) {
 	bfT := tensor.New(tensor.WithBacking([]float32{1, 1}), tensor.WithShape(2))
 	bf := G.NewVector(g, tensor.Float32, G.WithName("bf"), G.WithShape(2), G.WithValue(bfT))
 
-	p := parser.NewParser()
+	p := parser.NewParser(g)
 	p.Set(`Wf`, wf)
 	p.Set(`hₜ₋₁`, htprev)
 	p.Set(`xₜ`, xt)
 	p.Set(`bf`, bf)
-	result, _ := p.Parse(`Wf·hₜ₋₁+ Wf·xₜ+ bf`)
+	result, err := p.Parse(`1*Wf·hₜ₋₁+ Wf·xₜ+ bf`)
+	if err != nil {
+		t.Fatal(err)
+	}
 	//result, _ := p.Parse(`Wf·hₜ₋₁`)
 	//result = σ(result)
 	machine := G.NewLispMachine(g, G.ExecuteFwdOnly())

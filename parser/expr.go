@@ -6,12 +6,14 @@ import __yyfmt__ "fmt"
 //line expr.y:14
 import (
 	"bytes"
+	"fmt"
 	G "gorgonia.org/gorgonia"
 	"log"
+	"math/big"
 	"unicode/utf8"
 )
 
-//line expr.y:26
+//line expr.y:28
 type gorgoniaSymType struct {
 	yys  int
 	node *G.Node
@@ -38,7 +40,7 @@ const gorgoniaEofCode = 1
 const gorgoniaErrCode = 2
 const gorgoniaInitialStackSize = 16
 
-//line expr.y:90
+//line expr.y:92
 
 // The parser expects the lexer to return 0 on EOF.  Give it a name
 // for clarity.
@@ -50,7 +52,9 @@ type exprLex struct {
 	line   []byte
 	peek   rune
 	dico   map[string]*G.Node
+	g      *G.ExprGraph
 	result *G.Node
+	err    error
 }
 
 // Let assigns insert a node into de dictionary represented by the identifier
@@ -114,7 +118,7 @@ L:
 	yylval.node = &G.Node{}
 	val, ok := x.dico[b.String()]
 	if !ok {
-		log.Printf("Value %q does not exist in the dictionnary", b.String())
+		x.Error("Value does not exist in the dictionnary: " + b.String())
 		return eof
 	}
 	yylval.node = val
@@ -143,14 +147,16 @@ L:
 	if c != eof {
 		x.peek = c
 	}
-	// OWK Here we analyse the dictionnary
-	yylval.node = &G.Node{}
-	val, ok := x.dico[b.String()]
+	num := &big.Rat{}
+	_, ok := num.SetString(b.String())
 	if !ok {
-		log.Printf("Value %q does not exist in the dictionnary", b.String())
+		x.Error("Cannot read number: " + b.String())
 		return eof
 	}
-	yylval.node = val
+
+	res, _ := num.Float32()
+	yylval.node = G.NewScalar(x.g, G.Float32, G.WithValue(res))
+
 	return NODE
 }
 
@@ -175,7 +181,11 @@ func (x *exprLex) next() rune {
 
 // The parser calls this method on a parse error.
 func (x *exprLex) Error(s string) {
-	log.Printf("parse error: %s", s)
+	if x.err != nil {
+		x.err = fmt.Errorf("%v\nparse error: %s", x.err, s)
+	} else {
+		x.err = fmt.Errorf("parse error: %s", s)
+	}
 }
 
 /*
@@ -616,56 +626,56 @@ gorgoniadefault:
 
 	case 1:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-1 : gorgoniapt+1]
-		//line expr.y:40
+		//line expr.y:42
 		{
 			gorgonialex.(*exprLex).result = gorgoniaDollar[1].node
 
 		}
 	case 3:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-2 : gorgoniapt+1]
-		//line expr.y:48
+		//line expr.y:50
 		{
 			gorgoniaVAL.node = gorgoniaDollar[2].node
 		}
 	case 4:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-2 : gorgoniapt+1]
-		//line expr.y:52
+		//line expr.y:54
 		{
 			gorgoniaVAL.node = G.Must(G.Neg(gorgoniaDollar[2].node))
 		}
 	case 6:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:59
+		//line expr.y:61
 		{
 			gorgoniaVAL.node = G.Must(G.Add(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 7:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:63
+		//line expr.y:65
 		{
 			gorgoniaVAL.node = G.Must(G.Sub(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 9:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:70
+		//line expr.y:72
 		{
 			gorgoniaVAL.node = G.Must(G.Mul(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 10:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:74
+		//line expr.y:76
 		{
 			gorgoniaVAL.node = G.Must(G.HadamardProd(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 11:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:78
+		//line expr.y:80
 		{
 			gorgoniaVAL.node = G.Must(G.Div(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 13:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:85
+		//line expr.y:87
 		{
 			gorgoniaVAL.node = gorgoniaDollar[2].node
 		}

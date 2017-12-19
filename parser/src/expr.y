@@ -16,6 +16,8 @@ package parser
 import (
 	"bytes"
 	"log"
+	"math/big"
+        "fmt"
 	"unicode/utf8"
         G "gorgonia.org/gorgonia"
 )
@@ -99,7 +101,9 @@ type exprLex struct {
 	line []byte
 	peek rune
         dico map[string]*G.Node
+	g      *G.ExprGraph
         result *G.Node
+        err error
 }
 
 // Let assigns insert a node into de dictionary represented by the identifier
@@ -162,7 +166,7 @@ func (x *exprLex) ident(c rune, yylval *gorgoniaSymType) int {
 	yylval.node = &G.Node{}
         val, ok := x.dico[b.String()]
 	if !ok {
-		log.Printf("Value %q does not exist in the dictionnary", b.String())
+		x.Error("Value does not exist in the dictionnary: " + b.String())
 		return eof
 	}
 	yylval.node = val
@@ -190,14 +194,16 @@ func (x *exprLex) num(c rune, yylval *gorgoniaSymType) int {
 	if c != eof {
 		x.peek = c
 	}
-        // OWK Here we analyse the dictionnary
-	yylval.node = &G.Node{}
-        val, ok := x.dico[b.String()]
+	num := &big.Rat{}
+	_, ok := num.SetString(b.String())
 	if !ok {
-		log.Printf("Value %q does not exist in the dictionnary", b.String())
+		x.Error("Cannot read number: " + b.String())
 		return eof
 	}
-	yylval.node = val
+
+	res, _ := num.Float32()
+	yylval.node = G.NewScalar(x.g, G.Float32, G.WithValue(res))
+
 	return NODE
 }
 
@@ -222,7 +228,11 @@ func (x *exprLex) next() rune {
 
 // The parser calls this method on a parse error.
 func (x *exprLex) Error(s string) {
-	log.Printf("parse error: %s", s)
+        if x.err != nil {
+		x.err = fmt.Errorf("%v\nparse error: %s", x.err, s)
+	} else {
+		x.err = fmt.Errorf("parse error: %s", s)
+	}
 }
 
 /*
