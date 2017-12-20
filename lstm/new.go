@@ -180,7 +180,7 @@ func newModelFromBackends(back *backends) *Model {
 			prevSize = back.HiddenSizes[depth-1]
 		}
 		hiddenSize := back.HiddenSizes[depth]
-		p := parser.NewParser()
+		p := parser.NewParser(g)
 		l := new(lstm)
 		l.parser = p
 		m.ls = append(m.ls, l) // add lstm to model
