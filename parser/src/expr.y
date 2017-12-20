@@ -2,13 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// This is an example of a goyacc program.
-// To build it:
-// goyacc -p "expr" expr.y (produces y.go)
-// go build -o expr y.go
-// expr
-// > <type an expression>
-
 %{
 
 package parser
@@ -29,9 +22,9 @@ import (
 	node *G.Node
 }
 
-%type	<node>	expr expr1 expr2 expr3
+%type	<node>	expr expr1 expr2 expr3 function
 
-%token '+' '·' '-' '*' '/' '(' ')'
+%token '+' '·' '-' '*' '/' '(' ')' '=' 'σ' tanh
 
 %token	<node>	NODE
 
@@ -87,7 +80,17 @@ expr3:
 	{
 		$$ = $2
 	}
+|       function
 
+function:
+     'σ' expr3
+      {
+                $$ = G.Must(G.Sigmoid($2))
+      }
+|     tanh expr3
+      {
+                $$ = G.Must(G.Tanh($2))
+      }
 
 %%
 
@@ -121,7 +124,7 @@ func (x *exprLex) Lex(yylval *gorgoniaSymType) int {
 			return eof
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			return x.num(c, yylval)
-		case '+', '-', '*', '·', '/', '(', ')':
+		case 'σ', '+', '-', '*', '·', '/', '(', ')', '=':
 			return int(c)
 
 		// Recognize Unicode multiplication and division
@@ -162,15 +165,22 @@ func (x *exprLex) ident(c rune, yylval *gorgoniaSymType) int {
 	if c != eof {
 		x.peek = c
 	}
-        // OWK Here we analyse the dictionnary
-	yylval.node = &G.Node{}
-        val, ok := x.dico[b.String()]
-	if !ok {
-		x.Error("Value does not exist in the dictionnary: " + b.String())
-		return eof
-	}
-	yylval.node = val
-	return NODE
+        // if the token is tanh, return it
+        switch b.String() {
+        case "tanh":
+              return tanh
+        default:
+
+          // OWK Here we analyse the dictionnary
+          yylval.node = &G.Node{}
+          val, ok := x.dico[b.String()]
+          if !ok {
+                  x.Error("Value does not exist in the dictionnary: " + b.String())
+                  return eof
+          }
+          yylval.node = val
+        }
+        return NODE
 }
 
 // Lex a number.

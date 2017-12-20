@@ -5,6 +5,8 @@ state 0
 	'+'  shift 4
 	'-'  shift 5
 	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
 	NODE  shift 8
 	.  error
 
@@ -12,6 +14,7 @@ state 0
 	expr1  goto 3
 	expr2  goto 6
 	expr3  goto 7
+	function  goto 10
 	top  goto 1
 
 state 1
@@ -24,7 +27,7 @@ state 1
 state 2
 	top:  expr.    (1)
 
-	.  reduce 1 (src line 40)
+	.  reduce 1 (src line 33)
 
 
 state 3
@@ -32,9 +35,9 @@ state 3
 	expr1:  expr1.'+' expr2 
 	expr1:  expr1.'-' expr2 
 
-	'+'  shift 10
-	'-'  shift 11
-	.  reduce 2 (src line 47)
+	'+'  shift 13
+	'-'  shift 14
+	.  reduce 2 (src line 40)
 
 
 state 4
@@ -43,13 +46,16 @@ state 4
 	'+'  shift 4
 	'-'  shift 5
 	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
 	NODE  shift 8
 	.  error
 
-	expr  goto 12
+	expr  goto 15
 	expr1  goto 3
 	expr2  goto 6
 	expr3  goto 7
+	function  goto 10
 
 state 5
 	expr:  '-'.expr 
@@ -57,13 +63,16 @@ state 5
 	'+'  shift 4
 	'-'  shift 5
 	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
 	NODE  shift 8
 	.  error
 
-	expr  goto 13
+	expr  goto 16
 	expr1  goto 3
 	expr2  goto 6
 	expr3  goto 7
+	function  goto 10
 
 state 6
 	expr1:  expr2.    (5)
@@ -71,22 +80,22 @@ state 6
 	expr2:  expr2.'*' expr3 
 	expr2:  expr2.'/' expr3 
 
-	'·'  shift 14
-	'*'  shift 15
-	'/'  shift 16
-	.  reduce 5 (src line 58)
+	'·'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 5 (src line 51)
 
 
 state 7
 	expr2:  expr3.    (8)
 
-	.  reduce 8 (src line 69)
+	.  reduce 8 (src line 62)
 
 
 state 8
 	expr3:  NODE.    (12)
 
-	.  reduce 12 (src line 84)
+	.  reduce 12 (src line 77)
 
 
 state 9
@@ -95,137 +104,197 @@ state 9
 	'+'  shift 4
 	'-'  shift 5
 	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
 	NODE  shift 8
 	.  error
 
-	expr  goto 17
+	expr  goto 20
 	expr1  goto 3
 	expr2  goto 6
 	expr3  goto 7
+	function  goto 10
 
 state 10
-	expr1:  expr1 '+'.expr2 
+	expr3:  function.    (14)
 
-	'('  shift 9
-	NODE  shift 8
-	.  error
+	.  reduce 14 (src line 83)
 
-	expr2  goto 18
-	expr3  goto 7
 
 state 11
-	expr1:  expr1 '-'.expr2 
+	function:  'σ'.expr3 
 
 	'('  shift 9
-	NODE  shift 8
-	.  error
-
-	expr2  goto 19
-	expr3  goto 7
-
-state 12
-	expr:  '+' expr.    (3)
-
-	.  reduce 3 (src line 49)
-
-
-state 13
-	expr:  '-' expr.    (4)
-
-	.  reduce 4 (src line 53)
-
-
-state 14
-	expr2:  expr2 '·'.expr3 
-
-	'('  shift 9
-	NODE  shift 8
-	.  error
-
-	expr3  goto 20
-
-state 15
-	expr2:  expr2 '*'.expr3 
-
-	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
 	NODE  shift 8
 	.  error
 
 	expr3  goto 21
+	function  goto 10
 
-state 16
-	expr2:  expr2 '/'.expr3 
+state 12
+	function:  tanh.expr3 
 
 	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
 	NODE  shift 8
 	.  error
 
 	expr3  goto 22
+	function  goto 10
+
+state 13
+	expr1:  expr1 '+'.expr2 
+
+	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
+	NODE  shift 8
+	.  error
+
+	expr2  goto 23
+	expr3  goto 7
+	function  goto 10
+
+state 14
+	expr1:  expr1 '-'.expr2 
+
+	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
+	NODE  shift 8
+	.  error
+
+	expr2  goto 24
+	expr3  goto 7
+	function  goto 10
+
+state 15
+	expr:  '+' expr.    (3)
+
+	.  reduce 3 (src line 42)
+
+
+state 16
+	expr:  '-' expr.    (4)
+
+	.  reduce 4 (src line 46)
+
 
 state 17
+	expr2:  expr2 '·'.expr3 
+
+	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
+	NODE  shift 8
+	.  error
+
+	expr3  goto 25
+	function  goto 10
+
+state 18
+	expr2:  expr2 '*'.expr3 
+
+	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
+	NODE  shift 8
+	.  error
+
+	expr3  goto 26
+	function  goto 10
+
+state 19
+	expr2:  expr2 '/'.expr3 
+
+	'('  shift 9
+	'σ'  shift 11
+	tanh  shift 12
+	NODE  shift 8
+	.  error
+
+	expr3  goto 27
+	function  goto 10
+
+state 20
 	expr3:  '(' expr.')' 
 
-	')'  shift 23
+	')'  shift 28
 	.  error
 
 
-state 18
+state 21
+	function:  'σ' expr3.    (15)
+
+	.  reduce 15 (src line 85)
+
+
+state 22
+	function:  tanh expr3.    (16)
+
+	.  reduce 16 (src line 90)
+
+
+state 23
 	expr1:  expr1 '+' expr2.    (6)
 	expr2:  expr2.'·' expr3 
 	expr2:  expr2.'*' expr3 
 	expr2:  expr2.'/' expr3 
 
-	'·'  shift 14
-	'*'  shift 15
-	'/'  shift 16
-	.  reduce 6 (src line 60)
+	'·'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 6 (src line 53)
 
 
-state 19
+state 24
 	expr1:  expr1 '-' expr2.    (7)
 	expr2:  expr2.'·' expr3 
 	expr2:  expr2.'*' expr3 
 	expr2:  expr2.'/' expr3 
 
-	'·'  shift 14
-	'*'  shift 15
-	'/'  shift 16
-	.  reduce 7 (src line 64)
+	'·'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 7 (src line 57)
 
 
-state 20
+state 25
 	expr2:  expr2 '·' expr3.    (9)
 
-	.  reduce 9 (src line 71)
+	.  reduce 9 (src line 64)
 
 
-state 21
+state 26
 	expr2:  expr2 '*' expr3.    (10)
 
-	.  reduce 10 (src line 75)
+	.  reduce 10 (src line 68)
 
 
-state 22
+state 27
 	expr2:  expr2 '/' expr3.    (11)
 
-	.  reduce 11 (src line 79)
+	.  reduce 11 (src line 72)
 
 
-state 23
+state 28
 	expr3:  '(' expr ')'.    (13)
 
-	.  reduce 13 (src line 86)
+	.  reduce 13 (src line 79)
 
 
-11 terminals, 6 nonterminals
-14 grammar rules, 24/8000 states
+14 terminals, 7 nonterminals
+17 grammar rules, 29/8000 states
 0 shift/reduce, 0 reduce/reduce conflicts reported
-55 working sets used
-memory: parser 23/120000
+56 working sets used
+memory: parser 36/120000
 21 extra closures
-38 shift entries, 1 exceptions
-13 goto entries
-11 entries saved by goto default
-Optimizer space used: output 29/120000
-29 table entries, 4 zero
-maximum spread: 11, maximum offset: 16
+64 shift entries, 1 exceptions
+16 goto entries
+21 entries saved by goto default
+Optimizer space used: output 33/120000
+33 table entries, 1 zero
+maximum spread: 14, maximum offset: 19

@@ -28,22 +28,39 @@ func TestParse(t *testing.T) {
 	p.Set(`hₜ₋₁`, htprev)
 	p.Set(`xₜ`, xt)
 	p.Set(`bf`, bf)
-	result, err := p.Parse(`1*Wf·hₜ₋₁+ Wf·xₜ+ bf`)
-	if err != nil {
-		t.Fatal(err)
+	//result, err := p.Parse(`σ(1*Wf·hₜ₋₁+ Wf·xₜ+ bf)`)
+	type test struct {
+		equation string
+		expected []float32
 	}
-	//result, _ := p.Parse(`Wf·hₜ₋₁`)
-	//result = σ(result)
-	machine := G.NewLispMachine(g, G.ExecuteFwdOnly())
-	//machine := G.NewTapeMachine(g)
-	if err := machine.RunAll(); err != nil {
-		t.Fatal(err)
-	}
-	res := result.Value().Data().([]float32)
-	if len(res) != 2 {
-		t.Fail()
-	}
-	if res[0] != 5 && res[1] != 5 {
-		t.Fail()
+	for _, test := range []test{
+		test{
+			`1*Wf·hₜ₋₁+ Wf·xₜ+ bf`,
+			[]float32{5, 5},
+		},
+		test{
+			`σ(1*Wf·hₜ₋₁+ Wf·xₜ+ bf)`,
+			[]float32{0.9933072, 0.9933072},
+		},
+		test{
+			`tanh(1*Wf·hₜ₋₁+ Wf·xₜ+ bf)`,
+			[]float32{0.9999092, 0.9999092},
+		},
+	} {
+		result, err := p.Parse(test.equation)
+		if err != nil {
+			t.Fatal(err)
+		}
+		machine := G.NewLispMachine(g, G.ExecuteFwdOnly())
+		if err := machine.RunAll(); err != nil {
+			t.Fatal(err)
+		}
+		res := result.Value().Data().([]float32)
+		if len(res) != 2 {
+			t.Fail()
+		}
+		if res[0] != test.expected[0] || res[1] != test.expected[1] {
+			t.Fail()
+		}
 	}
 }

@@ -1,9 +1,9 @@
-//line expr.y:13
+//line expr.y:6
 package parser
 
 import __yyfmt__ "fmt"
 
-//line expr.y:14
+//line expr.y:7
 import (
 	"bytes"
 	"fmt"
@@ -13,13 +13,14 @@ import (
 	"unicode/utf8"
 )
 
-//line expr.y:28
+//line expr.y:21
 type gorgoniaSymType struct {
 	yys  int
 	node *G.Node
 }
 
-const NODE = 57346
+const tanh = 57346
+const NODE = 57347
 
 var gorgoniaToknames = [...]string{
 	"$end",
@@ -32,6 +33,9 @@ var gorgoniaToknames = [...]string{
 	"'/'",
 	"'('",
 	"')'",
+	"'='",
+	"'σ'",
+	"tanh",
 	"NODE",
 }
 var gorgoniaStatenames = [...]string{}
@@ -40,7 +44,7 @@ const gorgoniaEofCode = 1
 const gorgoniaErrCode = 2
 const gorgoniaInitialStackSize = 16
 
-//line expr.y:92
+//line expr.y:95
 
 // The parser expects the lexer to return 0 on EOF.  Give it a name
 // for clarity.
@@ -72,7 +76,7 @@ func (x *exprLex) Lex(yylval *gorgoniaSymType) int {
 			return eof
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			return x.num(c, yylval)
-		case '+', '-', '*', '·', '/', '(', ')':
+		case 'σ', '+', '-', '*', '·', '/', '(', ')', '=':
 			return int(c)
 
 		// Recognize Unicode multiplication and division
@@ -114,14 +118,21 @@ L:
 	if c != eof {
 		x.peek = c
 	}
-	// OWK Here we analyse the dictionnary
-	yylval.node = &G.Node{}
-	val, ok := x.dico[b.String()]
-	if !ok {
-		x.Error("Value does not exist in the dictionnary: " + b.String())
-		return eof
+	// if the token is tanh, return it
+	switch b.String() {
+	case "tanh":
+		return tanh
+	default:
+
+		// OWK Here we analyse the dictionnary
+		yylval.node = &G.Node{}
+		val, ok := x.dico[b.String()]
+		if !ok {
+			x.Error("Value does not exist in the dictionnary: " + b.String())
+			return eof
+		}
+		yylval.node = val
 	}
-	yylval.node = val
 	return NODE
 }
 
@@ -217,45 +228,46 @@ var gorgoniaExca = [...]int{
 
 const gorgoniaPrivate = 57344
 
-const gorgoniaLast = 29
+const gorgoniaLast = 33
 
 var gorgoniaAct = [...]int{
 
-	7, 4, 6, 5, 23, 9, 9, 8, 8, 14,
-	1, 15, 16, 18, 19, 20, 21, 22, 2, 10,
-	3, 11, 0, 12, 13, 0, 0, 0, 17,
+	7, 4, 6, 5, 28, 17, 9, 18, 19, 11,
+	12, 8, 21, 22, 1, 10, 23, 24, 25, 26,
+	27, 9, 2, 3, 11, 12, 8, 15, 16, 13,
+	0, 14, 20,
 }
 var gorgoniaPact = [...]int{
 
-	-3, -1000, -1000, 15, -3, -3, 4, -1000, -1000, -3,
-	-4, -4, -1000, -1000, -4, -4, -4, -6, 4, 4,
-	-1000, -1000, -1000, -1000,
+	-3, -1000, -1000, 25, -3, -3, 0, -1000, -1000, -3,
+	-1000, 12, 12, 12, 12, -1000, -1000, 12, 12, 12,
+	-6, -1000, -1000, 0, 0, -1000, -1000, -1000, -1000,
 }
 var gorgoniaPgo = [...]int{
 
-	0, 18, 20, 2, 0, 10,
+	0, 22, 23, 2, 0, 15, 14,
 }
 var gorgoniaR1 = [...]int{
 
-	0, 5, 1, 1, 1, 2, 2, 2, 3, 3,
-	3, 3, 4, 4,
+	0, 6, 1, 1, 1, 2, 2, 2, 3, 3,
+	3, 3, 4, 4, 4, 5, 5,
 }
 var gorgoniaR2 = [...]int{
 
 	0, 1, 1, 2, 2, 1, 3, 3, 1, 3,
-	3, 3, 1, 3,
+	3, 3, 1, 3, 1, 2, 2,
 }
 var gorgoniaChk = [...]int{
 
-	-1000, -5, -1, -2, 4, 6, -3, -4, 11, 9,
-	4, 6, -1, -1, 5, 7, 8, -1, -3, -3,
-	-4, -4, -4, 10,
+	-1000, -6, -1, -2, 4, 6, -3, -4, 14, 9,
+	-5, 12, 13, 4, 6, -1, -1, 5, 7, 8,
+	-1, -4, -4, -3, -3, -4, -4, -4, 10,
 }
 var gorgoniaDef = [...]int{
 
 	0, -2, 1, 2, 0, 0, 5, 8, 12, 0,
-	0, 0, 3, 4, 0, 0, 0, 0, 6, 7,
-	9, 10, 11, 13,
+	14, 0, 0, 0, 0, 3, 4, 0, 0, 0,
+	0, 15, 16, 6, 7, 9, 10, 11, 13,
 }
 var gorgoniaTok1 = [...]int{
 
@@ -265,7 +277,7 @@ var gorgoniaTok1 = [...]int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	9, 10, 7, 4, 3, 6, 3, 8, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 11, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -281,10 +293,10 @@ var gorgoniaTok1 = [...]int{
 }
 var gorgoniaTok2 = [...]int{
 
-	2, 3, 11,
+	2, 3, 13, 14,
 }
 var gorgoniaTok3 = [...]int{
-	0,
+	963, 12, 0,
 }
 
 var gorgoniaErrorMessages = [...]struct {
@@ -626,58 +638,70 @@ gorgoniadefault:
 
 	case 1:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-1 : gorgoniapt+1]
-		//line expr.y:42
+		//line expr.y:35
 		{
 			gorgonialex.(*exprLex).result = gorgoniaDollar[1].node
 
 		}
 	case 3:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-2 : gorgoniapt+1]
-		//line expr.y:50
+		//line expr.y:43
 		{
 			gorgoniaVAL.node = gorgoniaDollar[2].node
 		}
 	case 4:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-2 : gorgoniapt+1]
-		//line expr.y:54
+		//line expr.y:47
 		{
 			gorgoniaVAL.node = G.Must(G.Neg(gorgoniaDollar[2].node))
 		}
 	case 6:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:61
+		//line expr.y:54
 		{
 			gorgoniaVAL.node = G.Must(G.Add(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 7:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:65
+		//line expr.y:58
 		{
 			gorgoniaVAL.node = G.Must(G.Sub(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 9:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:72
+		//line expr.y:65
 		{
 			gorgoniaVAL.node = G.Must(G.Mul(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 10:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:76
+		//line expr.y:69
 		{
 			gorgoniaVAL.node = G.Must(G.HadamardProd(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 11:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:80
+		//line expr.y:73
 		{
 			gorgoniaVAL.node = G.Must(G.Div(gorgoniaDollar[1].node, gorgoniaDollar[3].node))
 		}
 	case 13:
 		gorgoniaDollar = gorgoniaS[gorgoniapt-3 : gorgoniapt+1]
-		//line expr.y:87
+		//line expr.y:80
 		{
 			gorgoniaVAL.node = gorgoniaDollar[2].node
+		}
+	case 15:
+		gorgoniaDollar = gorgoniaS[gorgoniapt-2 : gorgoniapt+1]
+		//line expr.y:87
+		{
+			gorgoniaVAL.node = G.Must(G.Sigmoid(gorgoniaDollar[2].node))
+		}
+	case 16:
+		gorgoniaDollar = gorgoniaS[gorgoniapt-2 : gorgoniapt+1]
+		//line expr.y:91
+		{
+			gorgoniaVAL.node = G.Must(G.Tanh(gorgoniaDollar[2].node))
 		}
 	}
 	goto gorgoniastack /* stack new state and value */
