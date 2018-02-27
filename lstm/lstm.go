@@ -1,31 +1,62 @@
 package lstm
 
 import (
+	"bufio"
 	"io"
 
 	G "gorgonia.org/gorgonia"
 )
 
-// IO is a structure that handles
+// IO is a structure that handles a batch training set
 type IO struct {
-	g *G.ExprGraph
+	RS io.ReadSeeker
+	WS io.ReadWriteSeeker
+	*Reader
 }
 
-func (i *IO) writeCurrentInputVector(*G.Node) error {
+type Reader struct {
+	r   io.Reader
+	buf *bufio.Reader
+}
+
+func (i *IO) WriteVector(*G.Node) error {
 	return nil
 }
-func (i *IO) getCurrentInputVector() (*G.Node, error) {
+
+func NewReader(r io.Reader) *Reader {
+	return &Reader{
+		r:   r,
+		buf: bufio.NewReader(r),
+	}
+}
+func (r *Reader) ReadVector() ([]float32, error) {
+	char, _, err := r.buf.ReadRune()
+	if err != nil {
+		return nil, err
+	}
+	return oneOfK(char)
+}
+
+func oneOfK(r rune) ([]float32, error) {
+	return nil, nil
+}
+func (i *IO) getLastOutputVector() (*G.Node, error) {
 	return nil, nil
 }
 
 // Forward pass as described here https://en.wikipedia.org/wiki/Long_short-term_memory#LSTM_with_a_forget_gate
-func (m *Model) fwd(tset IO, prevHidden, prevCell *G.Node) error {
-	inputVector, err := tset.getCurrentInputVector()
-	if err != nil {
-		if err == io.EOF {
-			return nil
-		}
+func (m *Model) fwd(tset IO, prevHidden, prevCell *G.Node, currentGeneratedIndex, maxGeneratedIndex int) error {
+	inputVector, err := tset.ReadVector()
+	switch {
+	case err != nil && err != io.EOF:
 		return err
+	case err == io.EOF && currentGeneratedIndex == maxGeneratedIndex:
+		return nil
+	case err == io.EOF && currentGeneratedIndex < maxGeneratedIndex:
+		inputVector, err = tset.getLastOutputVector()
+		if err != nil {
+			return err
+		}
 	}
 	// Helper function for clarity
 	set := func(ident, equation string) *G.Node {
@@ -46,5 +77,5 @@ func (m *Model) fwd(tset IO, prevHidden, prevCell *G.Node) error {
 	set(`hc`, `tanh(cₜ)`)
 	ht, _ := m.parser.Parse(`oₜ*hc`)
 	tset.writeCurrentInputVector(ht)
-	return m.fwd(tset, ht, ct)
+	return m.fwd(tset, ht, ct, currentGeneratedIndex+1, maxGeneratedIndex)
 }
