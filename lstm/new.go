@@ -3,14 +3,15 @@ package lstm
 import (
 	"bytes"
 	"encoding/gob"
-	"strconv"
 
 	"github.com/owulveryck/charRNN/parser"
 	G "gorgonia.org/gorgonia"
 	"gorgonia.org/tensor"
 )
 
-type lstm struct {
+// Model holds the structure of the LSTM model
+type Model struct {
+	g     *G.ExprGraph
 	wi    *G.Node
 	ui    *G.Node
 	biasI *G.Node
@@ -27,84 +28,55 @@ type lstm struct {
 	uc     *G.Node
 	biasC  *G.Node
 	parser *parser.Parser
-}
-
-// Model holds the structure of the LSTM model
-type Model struct {
-	g  *G.ExprGraph
-	ls []*lstm
-
-	whd   *G.Node
-	biasD *G.Node
 
 	inputSize   int
 	outputSize  int
-	hiddenSizes []int
+	hiddenSize  int
 	inputVector *G.Node
-	prevHiddens G.Nodes
-	prevCells   G.Nodes
+	prevHidden  *G.Node
+	prevCell    *G.Node
 }
 
 // backends holds the informations to be saved
 type backends struct {
-	InputSize   int
-	OutputSize  int
-	HiddenSizes []int
-	wi          [][]float32
-	ui          [][]float32
-	BiasI       [][]float32
+	InputSize  int
+	OutputSize int
+	HiddenSize int
+	Wi         []float32
+	Ui         []float32
+	BiasI      []float32
 
-	wf    [][]float32
-	uf    [][]float32
-	BiasF [][]float32
+	Wf    []float32
+	Uf    []float32
+	BiasF []float32
 
-	wo    [][]float32
-	uo    [][]float32
-	BiasO [][]float32
+	Wo    []float32
+	Uo    []float32
+	BiasO []float32
 
-	wc    [][]float32
-	uc    [][]float32
-	BiasC [][]float32
-
-	Whd   []float32
-	BiasD []float32
+	Wc    []float32
+	Uc    []float32
+	BiasC []float32
 }
 
 // MarshalBinary for backup. This function saves the content of the weights matrices and the biais but not the graph structure
 func (m Model) MarshalBinary() ([]byte, error) {
-	numlstms := len(m.ls)
 	var bkp backends
 	bkp.InputSize = m.inputSize
 	bkp.OutputSize = m.outputSize
-	bkp.HiddenSizes = m.hiddenSizes
-	bkp.wi = make([][]float32, numlstms)
-	bkp.ui = make([][]float32, numlstms)
-	bkp.BiasI = make([][]float32, numlstms)
-	bkp.wf = make([][]float32, numlstms)
-	bkp.uf = make([][]float32, numlstms)
-	bkp.BiasF = make([][]float32, numlstms)
-	bkp.wo = make([][]float32, numlstms)
-	bkp.uo = make([][]float32, numlstms)
-	bkp.BiasO = make([][]float32, numlstms)
-	bkp.wc = make([][]float32, numlstms)
-	bkp.uc = make([][]float32, numlstms)
-	bkp.BiasC = make([][]float32, numlstms)
-	for i := 0; i < numlstms; i++ {
-		bkp.wi[i] = m.ls[i].wi.Value().Data().([]float32)
-		bkp.ui[i] = m.ls[i].ui.Value().Data().([]float32)
-		bkp.BiasI[i] = m.ls[i].biasI.Value().Data().([]float32)
-		bkp.wf[i] = m.ls[i].wf.Value().Data().([]float32)
-		bkp.uf[i] = m.ls[i].uf.Value().Data().([]float32)
-		bkp.BiasF[i] = m.ls[i].biasF.Value().Data().([]float32)
-		bkp.wo[i] = m.ls[i].wo.Value().Data().([]float32)
-		bkp.uo[i] = m.ls[i].uo.Value().Data().([]float32)
-		bkp.BiasO[i] = m.ls[i].biasO.Value().Data().([]float32)
-		bkp.wc[i] = m.ls[i].wc.Value().Data().([]float32)
-		bkp.uc[i] = m.ls[i].uc.Value().Data().([]float32)
-		bkp.BiasC[i] = m.ls[i].biasC.Value().Data().([]float32)
-	}
-	bkp.Whd = m.whd.Value().Data().([]float32)
-	bkp.BiasD = m.biasD.Value().Data().([]float32)
+	bkp.HiddenSize = m.hiddenSize
+	bkp.Wi = m.wi.Value().Data().([]float32)
+	bkp.Ui = m.ui.Value().Data().([]float32)
+	bkp.BiasI = m.biasI.Value().Data().([]float32)
+	bkp.Wf = m.wf.Value().Data().([]float32)
+	bkp.Uf = m.uf.Value().Data().([]float32)
+	bkp.BiasF = m.biasF.Value().Data().([]float32)
+	bkp.Wo = m.wo.Value().Data().([]float32)
+	bkp.Uo = m.uo.Value().Data().([]float32)
+	bkp.BiasO = m.biasO.Value().Data().([]float32)
+	bkp.Wc = m.wc.Value().Data().([]float32)
+	bkp.Uc = m.uc.Value().Data().([]float32)
+	bkp.BiasC = m.biasC.Value().Data().([]float32)
 	var output bytes.Buffer
 	enc := gob.NewEncoder(&output)
 	err := enc.Encode(bkp)
@@ -125,149 +97,104 @@ func (m *Model) UnmarshalBinary(data []byte) error {
 }
 
 // initBackends returns weights initialisation
-func initBackends(inputSize, outputSize int, hiddenSizes []int) *backends {
+func initBackends(inputSize, outputSize int, hiddenSize int) *backends {
 	var back backends
 	back.InputSize = inputSize
 	back.OutputSize = outputSize
-	back.HiddenSizes = hiddenSizes
-	numlstms := len(hiddenSizes)
-	back.wi = make([][]float32, numlstms)
-	back.ui = make([][]float32, numlstms)
-	back.BiasI = make([][]float32, numlstms)
-	back.wf = make([][]float32, numlstms)
-	back.uf = make([][]float32, numlstms)
-	back.BiasF = make([][]float32, numlstms)
-	back.wo = make([][]float32, numlstms)
-	back.uo = make([][]float32, numlstms)
-	back.BiasO = make([][]float32, numlstms)
-	back.wc = make([][]float32, numlstms)
-	back.uc = make([][]float32, numlstms)
-	back.BiasC = make([][]float32, numlstms)
-	for depth := 0; depth < numlstms; depth++ {
-		prevSize := inputSize
-		if depth > 0 {
-			prevSize = hiddenSizes[depth-1]
-		}
-		hiddenSize := hiddenSizes[depth]
-		back.wi[depth] = G.Gaussian32(0.0, 0.08, hiddenSize, prevSize)
-		back.ui[depth] = G.Gaussian32(0.0, 0.08, hiddenSize, hiddenSize)
-		back.BiasI[depth] = make([]float32, hiddenSize)
-		back.wo[depth] = G.Gaussian32(0.0, 0.08, hiddenSize, prevSize)
-		back.uo[depth] = G.Gaussian32(0.0, 0.08, hiddenSize, hiddenSize)
-		back.BiasO[depth] = make([]float32, hiddenSize)
-		back.wf[depth] = G.Gaussian32(0.0, 0.08, hiddenSize, prevSize)
-		back.uf[depth] = G.Gaussian32(0.0, 0.08, hiddenSize, hiddenSize)
-		back.BiasF[depth] = make([]float32, hiddenSize)
-		back.wc[depth] = G.Gaussian32(0.0, 0.08, hiddenSize, prevSize)
-		back.uc[depth] = G.Gaussian32(0.0, 0.08, hiddenSize, hiddenSize)
-		back.BiasC[depth] = make([]float32, hiddenSize)
-	}
-	back.Whd = G.Gaussian32(0.0, 0.08, back.OutputSize, hiddenSizes[len(hiddenSizes)-1])
-	back.BiasD = make([]float32, outputSize)
+	back.HiddenSize = hiddenSize
+	back.Wi = G.Gaussian32(0.0, 0.08, hiddenSize, inputSize)
+	back.Ui = G.Gaussian32(0.0, 0.08, hiddenSize, hiddenSize)
+	back.BiasI = make([]float32, hiddenSize)
+	back.Wo = G.Gaussian32(0.0, 0.08, hiddenSize, inputSize)
+	back.Uo = G.Gaussian32(0.0, 0.08, hiddenSize, hiddenSize)
+	back.BiasO = make([]float32, hiddenSize)
+	back.Wf = G.Gaussian32(0.0, 0.08, hiddenSize, inputSize)
+	back.Uf = G.Gaussian32(0.0, 0.08, hiddenSize, hiddenSize)
+	back.BiasF = make([]float32, hiddenSize)
+	back.Wc = G.Gaussian32(0.0, 0.08, hiddenSize, inputSize)
+	back.Uc = G.Gaussian32(0.0, 0.08, hiddenSize, hiddenSize)
+	back.BiasC = make([]float32, hiddenSize)
 	return &back
 }
+
 func newModelFromBackends(back *backends) *Model {
 	m := new(Model)
 	g := G.NewGraph()
-	m.hiddenSizes = back.HiddenSizes
+	m.hiddenSize = back.HiddenSize
 	m.inputSize = back.InputSize
 	m.outputSize = back.OutputSize
 
-	var hiddens, cells []*G.Node
-	for depth := 0; depth < len(back.HiddenSizes); depth++ {
-		prevSize := back.InputSize
-		if depth > 0 {
-			prevSize = back.HiddenSizes[depth-1]
-		}
-		hiddenSize := back.HiddenSizes[depth]
-		p := parser.NewParser(g)
-		l := new(lstm)
-		l.parser = p
-		m.ls = append(m.ls, l) // add lstm to model
+	prevSize := back.InputSize
+	hiddenSize := back.HiddenSize
+	p := parser.NewParser(g)
 
-		layerID := strconv.Itoa(depth)
+	// input gate weights
+	wiT := tensor.New(tensor.WithShape(hiddenSize, prevSize), tensor.WithBacking(back.Wi))
+	uiT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.Ui))
+	//biasIT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
+	biasIT := tensor.New(tensor.WithBacking(back.BiasI), tensor.WithShape(hiddenSize))
 
-		// input gate weights
-		wiT := tensor.New(tensor.WithShape(hiddenSize, prevSize), tensor.WithBacking(back.wi[depth]))
-		uiT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.ui[depth]))
-		//biasIT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
-		biasIT := tensor.New(tensor.WithBacking(back.BiasI[depth]), tensor.WithShape(hiddenSize))
+	m.wi = G.NewMatrix(g, tensor.Float32, G.WithName("Wᵢ"), G.WithShape(hiddenSize, prevSize), G.WithValue(wiT))
+	m.ui = G.NewMatrix(g, tensor.Float32, G.WithName("Uᵢ"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(uiT))
+	m.biasI = G.NewVector(g, tensor.Float32, G.WithName("Bᵢ"), G.WithShape(hiddenSize), G.WithValue(biasIT))
+	p.Set(`Wᵢ`, m.wi)
+	p.Set(`Uᵢ`, m.ui)
+	p.Set(`Bᵢ`, m.biasI)
 
-		l.wi = G.NewMatrix(g, tensor.Float32, G.WithName("Wᵢ["+layerID+"]"), G.WithShape(hiddenSize, prevSize), G.WithValue(wiT))
-		l.ui = G.NewMatrix(g, tensor.Float32, G.WithName("Uᵢ["+layerID+"]"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(uiT))
-		l.biasI = G.NewVector(g, tensor.Float32, G.WithName("Bᵢ["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(biasIT))
-		p.Set(`Wᵢ`, l.wi)
-		p.Set(`Uᵢ`, l.ui)
-		p.Set(`Bᵢ`, l.biasI)
+	// output gate weights
 
-		// output gate weights
+	woT := tensor.New(tensor.WithShape(hiddenSize, prevSize), tensor.WithBacking(back.Wo))
+	uoT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.Uo))
+	biasOT := tensor.New(tensor.WithBacking(back.BiasO), tensor.WithShape(hiddenSize))
 
-		woT := tensor.New(tensor.WithShape(hiddenSize, prevSize), tensor.WithBacking(back.wo[depth]))
-		uoT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.uo[depth]))
-		biasOT := tensor.New(tensor.WithBacking(back.BiasO[depth]), tensor.WithShape(hiddenSize))
+	m.wo = G.NewMatrix(g, tensor.Float32, G.WithName("Wₒ"), G.WithShape(hiddenSize, prevSize), G.WithValue(woT))
+	m.uo = G.NewMatrix(g, tensor.Float32, G.WithName("Uₒ"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(uoT))
+	m.biasO = G.NewVector(g, tensor.Float32, G.WithName("Bₒ"), G.WithShape(hiddenSize), G.WithValue(biasOT))
+	p.Set(`Wₒ`, m.wo)
+	p.Set(`Uₒ`, m.uo)
+	p.Set(`Bₒ`, m.biasO)
 
-		l.wo = G.NewMatrix(g, tensor.Float32, G.WithName("Wₒ["+layerID+"]"), G.WithShape(hiddenSize, prevSize), G.WithValue(woT))
-		l.uo = G.NewMatrix(g, tensor.Float32, G.WithName("Uₒ["+layerID+"]"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(uoT))
-		l.biasO = G.NewVector(g, tensor.Float32, G.WithName("Bₒ["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(biasOT))
-		p.Set(`Wₒ`, l.wo)
-		p.Set(`Uₒ`, l.uo)
-		p.Set(`Bₒ`, l.biasO)
+	// forget gate weights
 
-		// forget gate weights
+	wfT := tensor.New(tensor.WithShape(hiddenSize, prevSize), tensor.WithBacking(back.Wf))
+	ufT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.Uf))
+	biasFT := tensor.New(tensor.WithBacking(back.BiasF), tensor.WithShape(hiddenSize))
 
-		wfT := tensor.New(tensor.WithShape(hiddenSize, prevSize), tensor.WithBacking(back.wf[depth]))
-		ufT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.uf[depth]))
-		biasFT := tensor.New(tensor.WithBacking(back.BiasF[depth]), tensor.WithShape(hiddenSize))
+	m.wf = G.NewMatrix(g, tensor.Float32, G.WithName("Wf"), G.WithShape(hiddenSize, prevSize), G.WithValue(wfT))
+	m.uf = G.NewMatrix(g, tensor.Float32, G.WithName("Uf"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(ufT))
+	m.biasF = G.NewVector(g, tensor.Float32, G.WithName("Bf"), G.WithShape(hiddenSize), G.WithValue(biasFT))
+	p.Set(`Wf`, m.wf)
+	p.Set(`Uf`, m.uf)
+	p.Set(`Bf`, m.biasF)
 
-		l.wf = G.NewMatrix(g, tensor.Float32, G.WithName("Wf["+layerID+"]"), G.WithShape(hiddenSize, prevSize), G.WithValue(wfT))
-		l.uf = G.NewMatrix(g, tensor.Float32, G.WithName("Uf["+layerID+"]"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(ufT))
-		l.biasF = G.NewVector(g, tensor.Float32, G.WithName("Bf["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(biasFT))
-		p.Set(`Wf`, l.wf)
-		p.Set(`Uf`, l.uf)
-		p.Set(`Bf`, l.biasF)
+	// cell write
 
-		// cell write
+	wcT := tensor.New(tensor.WithShape(hiddenSize, prevSize), tensor.WithBacking(back.Wc))
+	ucT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.Uc))
+	biasCT := tensor.New(tensor.WithBacking(back.BiasC), tensor.WithShape(hiddenSize))
 
-		wcT := tensor.New(tensor.WithShape(hiddenSize, prevSize), tensor.WithBacking(back.wc[depth]))
-		ucT := tensor.New(tensor.WithShape(hiddenSize, hiddenSize), tensor.WithBacking(back.uc[depth]))
-		biasCT := tensor.New(tensor.WithBacking(back.BiasC[depth]), tensor.WithShape(hiddenSize))
+	m.wc = G.NewMatrix(g, tensor.Float32, G.WithName("Wc"), G.WithShape(hiddenSize, prevSize), G.WithValue(wcT))
+	m.uc = G.NewMatrix(g, tensor.Float32, G.WithName("Uc"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(ucT))
+	m.biasC = G.NewVector(g, tensor.Float32, G.WithName("bc"), G.WithShape(hiddenSize), G.WithValue(biasCT))
+	p.Set(`Wc`, m.wc)
+	p.Set(`Uc`, m.uc)
+	p.Set(`Bc`, m.biasC)
 
-		l.wc = G.NewMatrix(g, tensor.Float32, G.WithName("Wc["+layerID+"]"), G.WithShape(hiddenSize, prevSize), G.WithValue(wcT))
-		l.uc = G.NewMatrix(g, tensor.Float32, G.WithName("Uc["+layerID+"]"), G.WithShape(hiddenSize, hiddenSize), G.WithValue(ucT))
-		l.biasC = G.NewVector(g, tensor.Float32, G.WithName("bc["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(biasCT))
-		p.Set(`Wc`, l.wc)
-		p.Set(`Uc`, l.uc)
-		p.Set(`Bc`, l.biasC)
-
-		// this is to simulate a default "previous" state
-		hiddenT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
-		cellT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
-		hidden := G.NewVector(g, tensor.Float32, G.WithName("hₜ₋₁["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(hiddenT))
-		cell := G.NewVector(g, tensor.Float32, G.WithName("Cₜ₋₁["+layerID+"]"), G.WithShape(hiddenSize), G.WithValue(cellT))
-
-		hiddens = append(hiddens, hidden)
-		cells = append(cells, cell)
-	}
-
-	lastHiddenSize := back.HiddenSizes[len(back.HiddenSizes)-1]
-
-	whdT := tensor.New(tensor.WithShape(back.OutputSize, lastHiddenSize), tensor.WithBacking(back.Whd))
-	biasDT := tensor.New(tensor.WithBacking(back.BiasD), tensor.WithShape(back.OutputSize))
-
-	m.whd = G.NewMatrix(g, tensor.Float32, G.WithName("whd_"), G.WithShape(back.OutputSize, lastHiddenSize), G.WithValue(whdT))
-	m.biasD = G.NewVector(g, tensor.Float32, G.WithName("biasD_"), G.WithShape(back.OutputSize), G.WithValue(biasDT))
+	// this is to simulate a default "previous" state
+	hiddenT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
+	cellT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
+	m.prevHidden = G.NewVector(g, tensor.Float32, G.WithName("hₜ₋₁"), G.WithShape(hiddenSize), G.WithValue(hiddenT))
+	m.prevCell = G.NewVector(g, tensor.Float32, G.WithName("Cₜ₋₁"), G.WithShape(hiddenSize), G.WithValue(cellT))
 
 	// these are to simulate a previous state
 	dummyInputVec := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(back.InputSize)) // zeroes
 	m.inputVector = G.NewVector(g, tensor.Float32, G.WithName("xₜ"), G.WithShape(back.InputSize), G.WithValue(dummyInputVec))
-	m.prevHiddens = hiddens
-	m.prevCells = cells
 
 	m.g = g
 	return m
 }
 
 // NewModel creates a new model
-func NewModel(inputSize, outputSize int, hiddenSizes []int) *Model {
-	return newModelFromBackends(initBackends(inputSize, outputSize, hiddenSizes))
+func NewModel(inputSize, outputSize int, hiddenSize int) *Model {
+	return newModelFromBackends(initBackends(inputSize, outputSize, hiddenSize))
 }
