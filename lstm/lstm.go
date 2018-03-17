@@ -8,7 +8,7 @@ import (
 
 // dataSetIO is an interface that can Read and returns a oneOfK encoded vector
 type dataSetIO interface {
-	ReadInputVec(g *G.ExprGraph) (*G.Node, error)
+	ReadInputVec(*G.ExprGraph) (*G.Node, error)
 	WriteVec(*G.Node) error
 }
 
