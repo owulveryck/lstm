@@ -4,22 +4,19 @@ import (
 	"io"
 
 	G "gorgonia.org/gorgonia"
-	"gorgonia.org/tensor"
 )
 
 // dataSetIO is an interface that can Read and returns a oneOfK encoded vector
 type dataSetIO interface {
-	ReadInputVec() ([]float32, error)
-	WriteVec([]float32) error
+	ReadInputVec(g *G.ExprGraph) (*G.Node, error)
+	WriteVec(*G.Node) error
 }
 
 // Forward pass as described here https://en.wikipedia.org/wiki/Long_short-term_memory#LSTM_with_a_forget_gate
 // It returns the last hidden node and the last cell node
 func (m *Model) fwd(dataSet dataSetIO, prevHidden, prevCell *G.Node) (*G.Node, *G.Node, error) {
 	// Read the current input vector
-	inputVectorValue, err := dataSet.ReadInputVec()
-	inputTensor := tensor.New(tensor.Of(tensor.Float32), tensor.WithBacking(inputVectorValue))
-	inputVector := G.NewVector(m.g, tensor.Float32, G.WithName("xₜ"), G.WithShape(m.inputSize), G.WithValue(inputTensor))
+	inputVector, err := dataSet.ReadInputVec(m.g)
 
 	switch {
 	case err != nil && err != io.EOF:
@@ -48,6 +45,6 @@ func (m *Model) fwd(dataSet dataSetIO, prevHidden, prevCell *G.Node) (*G.Node, *
 	// Apply the softmax function to the output vector
 	prob := G.Must(G.SoftMax(ht))
 
-	dataSet.WriteVec(prob.Value().Data().([]float32))
+	dataSet.WriteVec(prob)
 	return m.fwd(dataSet, prob, ct)
 }
