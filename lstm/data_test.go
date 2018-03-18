@@ -1,6 +1,14 @@
 package lstm
 
-// testBackends returns a backend with predictibale values for the test
+import (
+	"fmt"
+	"io"
+
+	G "gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
+)
+
+// testBackends returns a backend with predictabale values for the test
 // biais are zeroes and matrices are 1
 func testBackends(inputSize, outputSize int, hiddenSize int) *backends {
 	var back backends
@@ -44,4 +52,30 @@ func testBackends(inputSize, outputSize int, hiddenSize int) *backends {
 	}
 	back.BiasC = make([]float32, hiddenSize)
 	return &back
+}
+
+type testSet struct {
+	values [][]float32
+	offset int
+	output G.Nodes
+}
+
+func (t *testSet) ReadInputVector(g *G.ExprGraph) (*G.Node, error) {
+	if t.offset >= len(t.values) {
+		return nil, io.EOF
+	}
+	size := len(t.values[t.offset])
+	inputTensor := tensor.New(tensor.WithShape(size), tensor.WithBacking(t.values[t.offset]))
+	node := G.NewVector(g, tensor.Float32, G.WithName(fmt.Sprintf("input_%v", t.offset)), G.WithShape(size), G.WithValue(inputTensor))
+	t.offset++
+	return node, nil
+}
+
+func (t *testSet) WriteComputedVector(n *G.Node) error {
+	t.output = append(t.output, n)
+	return nil
+}
+
+func (t *testSet) GetComputedVectors() G.Nodes {
+	return t.output
 }

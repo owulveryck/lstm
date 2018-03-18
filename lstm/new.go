@@ -127,6 +127,7 @@ func newModelFromBackends(back *backends) *Model {
 	prevSize := back.InputSize
 	hiddenSize := back.HiddenSize
 	p := parser.NewParser(g)
+	m.parser = p
 
 	// input gate weights
 	wiT := tensor.New(tensor.WithShape(hiddenSize, prevSize), tensor.WithBacking(back.Wi))
