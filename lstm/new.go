@@ -29,12 +29,12 @@ type Model struct {
 	biasC  *G.Node
 	parser *parser.Parser
 
-	inputSize   int
-	outputSize  int
-	hiddenSize  int
-	inputVector *G.Node
-	prevHidden  *G.Node
-	prevCell    *G.Node
+	inputSize  int
+	outputSize int
+	hiddenSize int
+	//inputVector *G.Node
+	prevHidden *G.Node
+	prevCell   *G.Node
 }
 
 // backends holds the informations to be saved
@@ -187,8 +187,8 @@ func newModelFromBackends(back *backends) *Model {
 	m.prevCell = G.NewVector(g, tensor.Float32, G.WithName("Cₜ₋₁"), G.WithShape(hiddenSize), G.WithValue(cellT))
 
 	// these are to simulate a previous state
-	dummyInputVec := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(back.InputSize)) // zeroes
-	m.inputVector = G.NewVector(g, tensor.Float32, G.WithName("xₜ"), G.WithShape(back.InputSize), G.WithValue(dummyInputVec))
+	//dummyInputVec := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(back.InputSize)) // zeroes
+	//m.inputVector = G.NewVector(g, tensor.Float32, G.WithName("xₜ"), G.WithShape(back.InputSize), G.WithValue(dummyInputVec))
 
 	m.g = g
 	return m

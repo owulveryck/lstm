@@ -3,20 +3,15 @@ package lstm
 import (
 	"io"
 
+	"github.com/owulveryck/charRNN/datasetter"
 	G "gorgonia.org/gorgonia"
 )
 
-// dataSetIO is an interface that can Read and returns a oneOfK encoded vector
-type dataSetIO interface {
-	ReadInputVec(*G.ExprGraph) (*G.Node, error)
-	WriteVec(*G.Node) error
-}
-
-// Forward pass as described here https://en.wikipedia.org/wiki/Long_short-term_memory#LSTM_with_a_forget_gate
+// forwardStep as described here https://en.wikipedia.org/wiki/Long_short-term_memory#LSTM_with_a_forget_gate
 // It returns the last hidden node and the last cell node
-func (m *Model) fwd(dataSet dataSetIO, prevHidden, prevCell *G.Node) (*G.Node, *G.Node, error) {
+func (m *Model) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell *G.Node) (*G.Node, *G.Node, error) {
 	// Read the current input vector
-	inputVector, err := dataSet.ReadInputVec(m.g)
+	inputVector, err := dataSet.ReadInputVector(m.g)
 
 	switch {
 	case err != nil && err != io.EOF:
@@ -45,6 +40,42 @@ func (m *Model) fwd(dataSet dataSetIO, prevHidden, prevCell *G.Node) (*G.Node, *
 	// Apply the softmax function to the output vector
 	prob := G.Must(G.SoftMax(ht))
 
-	dataSet.WriteVec(prob)
-	return m.fwd(dataSet, prob, ct)
+	dataSet.WriteComputedVector(prob)
+	return m.forwardStep(dataSet, prob, ct)
+}
+
+// the cost function
+func (m *Model) cost(dataSet datasetter.Trainer) (cost, perplexity *G.Node, err error) {
+	hidden, cell, err := m.forwardStep(dataSet, m.prevHidden, m.prevCell)
+	if err != nil {
+		return nil, nil, err
+	}
+	var loss, perp *G.Node
+	// Evaluate the cost
+	for i, computedVector := range dataSet.GetComputedVectors() {
+		expectedValue, err := dataSet.GetExpectedValue(i)
+		if err != nil {
+			return nil, nil, err
+		}
+		logprob := G.Must(G.Neg(G.Must(G.Log(computedVector))))
+		loss = G.Must(G.Slice(logprob, G.S(expectedValue)))
+		log2prob := G.Must(G.Neg(G.Must(G.Log2(computedVector))))
+		perp = G.Must(G.Slice(log2prob, G.S(expectedValue)))
+
+		if cost == nil {
+			cost = loss
+		} else {
+			cost = G.Must(G.Add(cost, loss))
+		}
+		G.WithName("Cost")(cost)
+
+		if perplexity == nil {
+			perplexity = perp
+		} else {
+			perplexity = G.Must(G.Add(perplexity, perp))
+		}
+	}
+	m.prevHidden = hidden
+	m.prevCell = cell
+	return
 }
