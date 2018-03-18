@@ -24,9 +24,12 @@ type Model struct {
 	uo    *G.Node
 	biasO *G.Node
 
-	wc     *G.Node
-	uc     *G.Node
-	biasC  *G.Node
+	wc    *G.Node
+	uc    *G.Node
+	biasC *G.Node
+
+	wy     *G.Node
+	biasY  *G.Node
 	parser *parser.Parser
 
 	inputSize  int
@@ -57,6 +60,9 @@ type backends struct {
 	Wc    []float32
 	Uc    []float32
 	BiasC []float32
+
+	Wy    []float32
+	BiasY []float32
 }
 
 // MarshalBinary for backup. This function saves the content of the weights matrices and the biais but not the graph structure
@@ -77,6 +83,8 @@ func (m Model) MarshalBinary() ([]byte, error) {
 	bkp.Wc = m.wc.Value().Data().([]float32)
 	bkp.Uc = m.uc.Value().Data().([]float32)
 	bkp.BiasC = m.biasC.Value().Data().([]float32)
+	bkp.Wy = m.wy.Value().Data().([]float32)
+	bkp.BiasY = m.biasY.Value().Data().([]float32)
 	var output bytes.Buffer
 	enc := gob.NewEncoder(&output)
 	err := enc.Encode(bkp)
@@ -114,6 +122,8 @@ func initBackends(inputSize, outputSize int, hiddenSize int) *backends {
 	back.Wc = G.Gaussian32(0.0, 0.08, hiddenSize, inputSize)
 	back.Uc = G.Gaussian32(0.0, 0.08, hiddenSize, hiddenSize)
 	back.BiasC = make([]float32, hiddenSize)
+	back.Wy = G.Gaussian32(0.0, 0.08, outputSize, hiddenSize)
+	back.BiasY = make([]float32, outputSize)
 	return &back
 }
 
@@ -126,6 +136,7 @@ func newModelFromBackends(back *backends) *Model {
 
 	prevSize := back.InputSize
 	hiddenSize := back.HiddenSize
+	outputSize := back.OutputSize
 	p := parser.NewParser(g)
 	m.parser = p
 
@@ -180,6 +191,15 @@ func newModelFromBackends(back *backends) *Model {
 	p.Set(`Wc`, m.wc)
 	p.Set(`Uc`, m.uc)
 	p.Set(`Bc`, m.biasC)
+
+	// Output vector
+	wyT := tensor.New(tensor.WithShape(outputSize, hiddenSize), tensor.WithBacking(back.Wy))
+	biasYT := tensor.New(tensor.WithBacking(back.BiasY), tensor.WithShape(outputSize))
+
+	m.wy = G.NewMatrix(g, tensor.Float32, G.WithName("Wy"), G.WithShape(outputSize, hiddenSize), G.WithValue(wyT))
+	m.biasY = G.NewVector(g, tensor.Float32, G.WithName("by"), G.WithShape(outputSize), G.WithValue(biasYT))
+	p.Set(`Wy`, m.wy)
+	p.Set(`By`, m.biasY)
 
 	// this is to simulate a default "previous" state
 	hiddenT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))

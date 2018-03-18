@@ -79,6 +79,11 @@ func areEquals(a, b *Model) error {
 			return fmt.Errorf("Error")
 		}
 	}
+	for i := range a.biasC.Value().Data().([]float32) {
+		if a.biasC.Value().Data().([]float32)[i] != b.biasC.Value().Data().([]float32)[i] {
+			return fmt.Errorf("Error")
+		}
+	}
 	if a.inputSize != b.inputSize {
 		return fmt.Errorf("Error")
 	}

@@ -2,6 +2,9 @@ package lstm
 
 import (
 	"io"
+	"log"
+	"strconv"
+	"strings"
 
 	"github.com/owulveryck/charRNN/datasetter"
 	G "gorgonia.org/gorgonia"
@@ -9,7 +12,7 @@ import (
 
 // forwardStep as described here https://en.wikipedia.org/wiki/Long_short-term_memory#LSTM_with_a_forget_gate
 // It returns the last hidden node and the last cell node
-func (m *Model) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell *G.Node) (*G.Node, *G.Node, error) {
+func (m *Model) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell *G.Node, step int) (*G.Node, *G.Node, error) {
 	// Read the current input vector
 	inputVector, err := dataSet.ReadInputVector(m.g)
 
@@ -20,33 +23,38 @@ func (m *Model) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell 
 		return prevHidden, prevCell, nil
 	}
 	// Helper function for clarity
+	script := strings.NewReplacer(`1`, `₁`, `2`, `₂`, `3`, `₃`, `4`, `₄`, `5`, `₅`, `6`, `₆`, `7`, `₇`, `8`, `₈`, `9`, `₉`, `0`, `₀`, `-`, `₋`)
+	r := strings.NewReplacer(`ₜ₋₁`, script.Replace(strconv.Itoa(step-1)), `ₜ`, script.Replace(strconv.Itoa(step)))
 	set := func(ident, equation string) *G.Node {
-		res, _ := m.parser.Parse(equation)
-		m.parser.Set(ident, res)
+		log.Printf("%v=%v", r.Replace(ident), r.Replace(equation))
+		res, _ := m.parser.Parse(r.Replace(equation))
+		m.parser.Set(r.Replace(ident), res)
 		return res
 	}
 
-	m.parser.Set(`xₜ`, inputVector)
-	m.parser.Set(`hₜ₋₁`, prevHidden)
-	m.parser.Set(`cₜ₋₁`, prevCell)
+	m.parser.Set(r.Replace(`xₜ`), inputVector)
+	if step == 0 {
+		m.parser.Set(r.Replace(`hₜ₋₁`), prevHidden)
+		m.parser.Set(r.Replace(`cₜ₋₁`), prevCell)
+	}
 	set(`iₜ`, `σ(Wᵢ·xₜ+Uᵢ·hₜ₋₁+Bᵢ)`)
 	set(`fₜ`, `σ(Wf·xₜ+Uf·hₜ₋₁+Bf)`) // dot product made with ctrl+k . M
 	set(`oₜ`, `σ(Wₒ·xₜ+Uₒ·hₜ₋₁+Bₒ)`)
 	// ċₜis a vector of new candidates value
 	set(`ĉₜ`, `tanh(Wc·xₜ+Uc·hₜ₋₁+Bc)`) // c made with ctrl+k c >
 	ct := set(`cₜ`, `fₜ*cₜ₋₁+iₜ*ĉₜ`)
-	set(`hc`, `tanh(cₜ)`)
-	ht, _ := m.parser.Parse(`oₜ*hc`)
+	ht := set(`hₜ`, `oₜ*tanh(cₜ)`)
+	y, _ := m.parser.Parse(r.Replace(`Wy·hₜ+By`))
 	// Apply the softmax function to the output vector
-	prob := G.Must(G.SoftMax(ht))
+	prob := G.Must(G.SoftMax(y))
 
 	dataSet.WriteComputedVector(prob)
-	return m.forwardStep(dataSet, prob, ct)
+	return m.forwardStep(dataSet, ht, ct, step+1)
 }
 
 // the cost function
 func (m *Model) cost(dataSet datasetter.Trainer) (cost, perplexity *G.Node, err error) {
-	hidden, cell, err := m.forwardStep(dataSet, m.prevHidden, m.prevCell)
+	hidden, cell, err := m.forwardStep(dataSet, m.prevHidden, m.prevCell, 0)
 	if err != nil {
 		return nil, nil, err
 	}
