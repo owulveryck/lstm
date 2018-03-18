@@ -12,45 +12,51 @@ import (
 // biais are zeroes and matrices are 1
 func testBackends(inputSize, outputSize int, hiddenSize int) *backends {
 	var back backends
+	initValue := float32(1e-5)
 	back.InputSize = inputSize
 	back.OutputSize = outputSize
 	back.HiddenSize = hiddenSize
 	back.Wi = make([]float32, hiddenSize*inputSize)
 	for i := 0; i < hiddenSize*inputSize; i++ {
-		back.Wi[i] = 1
+		back.Wi[i] = initValue
 	}
 	back.Ui = make([]float32, hiddenSize*hiddenSize)
 	for i := 0; i < hiddenSize*hiddenSize; i++ {
-		back.Ui[i] = 1
+		back.Ui[i] = initValue
 	}
 	back.BiasI = make([]float32, hiddenSize)
 	back.Wo = make([]float32, hiddenSize*inputSize)
 	for i := 0; i < hiddenSize*inputSize; i++ {
-		back.Wo[i] = 1
+		back.Wo[i] = initValue
 	}
 	back.Uo = make([]float32, hiddenSize*hiddenSize)
 	for i := 0; i < hiddenSize*hiddenSize; i++ {
-		back.Uo[i] = 1
+		back.Uo[i] = initValue
 	}
 	back.BiasO = make([]float32, hiddenSize)
 	back.Wf = make([]float32, hiddenSize*inputSize)
 	for i := 0; i < hiddenSize*inputSize; i++ {
-		back.Wf[i] = 1
+		back.Wf[i] = initValue
 	}
 	back.Uf = make([]float32, hiddenSize*hiddenSize)
 	for i := 0; i < hiddenSize*hiddenSize; i++ {
-		back.Uf[i] = 1
+		back.Uf[i] = initValue
 	}
 	back.BiasF = make([]float32, hiddenSize)
 	back.Wc = make([]float32, hiddenSize*inputSize)
 	for i := 0; i < hiddenSize*inputSize; i++ {
-		back.Wc[i] = 1
+		back.Wc[i] = initValue
 	}
 	back.Uc = make([]float32, hiddenSize*hiddenSize)
 	for i := 0; i < hiddenSize*hiddenSize; i++ {
-		back.Uc[i] = 1
+		back.Uc[i] = initValue
 	}
 	back.BiasC = make([]float32, hiddenSize)
+	back.Wy = make([]float32, hiddenSize*outputSize)
+	for i := 0; i < hiddenSize*outputSize; i++ {
+		back.Wy[i] = initValue
+	}
+	back.BiasY = make([]float32, outputSize)
 	return &back
 }
 

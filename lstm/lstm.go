@@ -2,7 +2,6 @@ package lstm
 
 import (
 	"io"
-	"log"
 	"strconv"
 	"strings"
 
@@ -26,7 +25,7 @@ func (m *Model) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell 
 	script := strings.NewReplacer(`1`, `₁`, `2`, `₂`, `3`, `₃`, `4`, `₄`, `5`, `₅`, `6`, `₆`, `7`, `₇`, `8`, `₈`, `9`, `₉`, `0`, `₀`, `-`, `₋`)
 	r := strings.NewReplacer(`ₜ₋₁`, script.Replace(strconv.Itoa(step-1)), `ₜ`, script.Replace(strconv.Itoa(step)))
 	set := func(ident, equation string) *G.Node {
-		log.Printf("%v=%v", r.Replace(ident), r.Replace(equation))
+		//log.Printf("%v=%v", r.Replace(ident), r.Replace(equation))
 		res, _ := m.parser.Parse(r.Replace(equation))
 		m.parser.Set(r.Replace(ident), res)
 		return res
