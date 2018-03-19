@@ -61,9 +61,10 @@ func testBackends(inputSize, outputSize int, hiddenSize int) *backends {
 }
 
 type testSet struct {
-	values [][]float32
-	offset int
-	output G.Nodes
+	values         [][]float32
+	expectedValues []int
+	offset         int
+	output         G.Nodes
 }
 
 func (t *testSet) ReadInputVector(g *G.ExprGraph) (*G.Node, error) {
@@ -84,4 +85,8 @@ func (t *testSet) WriteComputedVector(n *G.Node) error {
 
 func (t *testSet) GetComputedVectors() G.Nodes {
 	return t.output
+}
+
+func (t *testSet) GetExpectedValue(offset int) (int, error) {
+	return t.expectedValues[offset], nil
 }

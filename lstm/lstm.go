@@ -2,8 +2,6 @@ package lstm
 
 import (
 	"io"
-	"strconv"
-	"strings"
 
 	"github.com/owulveryck/charRNN/datasetter"
 	G "gorgonia.org/gorgonia"
@@ -22,8 +20,9 @@ func (m *Model) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell 
 		return prevHidden, prevCell, nil
 	}
 	// Helper function for clarity
-	script := strings.NewReplacer(`1`, `₁`, `2`, `₂`, `3`, `₃`, `4`, `₄`, `5`, `₅`, `6`, `₆`, `7`, `₇`, `8`, `₈`, `9`, `₉`, `0`, `₀`, `-`, `₋`)
-	r := strings.NewReplacer(`ₜ₋₁`, script.Replace(strconv.Itoa(step-1)), `ₜ`, script.Replace(strconv.Itoa(step)))
+	// r is a replacer that will change ₜ and ₜ₋₁ for step and step-1
+	// this is to avoid conflict in the graph due to the recursion
+	r := replace(`ₜ`, step)
 	set := func(ident, equation string) *G.Node {
 		//log.Printf("%v=%v", r.Replace(ident), r.Replace(equation))
 		res, _ := m.parser.Parse(r.Replace(equation))
