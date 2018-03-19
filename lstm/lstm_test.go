@@ -41,18 +41,19 @@ func TestCost(t *testing.T) {
 		},
 		expectedValues: []int{1, 2, 3, 4, 0},
 	}
-	solver := G.NewVanillaSolver()
-	for i := 0; i < 5; i++ {
-		_, _, err := model.cost(tset)
+	learnrate := 0.01
+	l2reg := 1e-6
+	clipVal := float64(5)
+	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
+	for i := 0; i < 200; i++ {
+		cost, _, err := model.cost(tset)
 		if err != nil {
 			t.Fatal(err)
 		}
-		machine := G.NewLispMachine(model.g)
+		g := model.g.SubgraphRoots(cost)
+		machine := G.NewLispMachine(g)
 		if err := machine.RunAll(); err != nil {
 			t.Fatal(err)
-		}
-		for _, computedVector := range tset.GetComputedVectors() {
-			t.Log(computedVector.Value().Data().([]float32))
 		}
 		solver.Step(G.Nodes{
 			model.biasC,
@@ -69,5 +70,9 @@ func TestCost(t *testing.T) {
 			model.wi,
 			model.wo,
 			model.wy})
+	}
+	for i, computedVector := range tset.GetComputedVectors() {
+		t.Log(tset.expectedValues[i])
+		t.Log(computedVector.Value().Data().([]float32))
 	}
 }

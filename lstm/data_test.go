@@ -12,7 +12,7 @@ import (
 // biais are zeroes and matrices are 1
 func testBackends(inputSize, outputSize int, hiddenSize int) *backends {
 	var back backends
-	initValue := float32(1e-5)
+	initValue := float32(1e-3)
 	back.InputSize = inputSize
 	back.OutputSize = outputSize
 	back.HiddenSize = hiddenSize
