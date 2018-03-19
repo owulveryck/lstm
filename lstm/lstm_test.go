@@ -46,7 +46,7 @@ func TestCost(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 5; i++ {
-		machine := G.NewLispMachine(model.g, G.ExecuteFwdOnly())
+		machine := G.NewLispMachine(model.g)
 		if err := machine.RunAll(); err != nil {
 			t.Fatal(err)
 		}
