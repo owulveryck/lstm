@@ -41,11 +41,12 @@ func TestCost(t *testing.T) {
 		},
 		expectedValues: []int{1, 2, 3, 4, 0},
 	}
-	_, _, err := model.cost(tset)
-	if err != nil {
-		t.Fatal(err)
-	}
+	solver := G.NewVanillaSolver()
 	for i := 0; i < 5; i++ {
+		_, _, err := model.cost(tset)
+		if err != nil {
+			t.Fatal(err)
+		}
 		machine := G.NewLispMachine(model.g)
 		if err := machine.RunAll(); err != nil {
 			t.Fatal(err)
@@ -53,6 +54,20 @@ func TestCost(t *testing.T) {
 		for _, computedVector := range tset.GetComputedVectors() {
 			t.Log(computedVector.Value().Data().([]float32))
 		}
+		solver.Step(G.Nodes{
+			model.biasC,
+			model.biasF,
+			model.biasI,
+			model.biasO,
+			model.biasY,
+			model.uc,
+			model.uf,
+			model.ui,
+			model.uo,
+			model.wc,
+			model.wf,
+			model.wi,
+			model.wo,
+			model.wy})
 	}
-
 }
