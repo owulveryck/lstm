@@ -30,7 +30,7 @@ func TestForwardStep(t *testing.T) {
 }
 
 func TestCost(t *testing.T) {
-	model := newModelFromBackends(testBackends(5, 5, 100))
+	model := newModelFromBackends(testBackends(5, 5, 10))
 	tset := &testSet{
 		values: [][]float32{
 			[]float32{1, 0, 0, 0, 0},
@@ -45,7 +45,7 @@ func TestCost(t *testing.T) {
 	l2reg := 1e-6
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
-	for i := 0; i < 200; i++ {
+	for i := 0; i < 100; i++ {
 		cost, _, err := model.cost(tset)
 		if err != nil {
 			t.Fatal(err)
