@@ -71,8 +71,23 @@ func TestCost(t *testing.T) {
 			model.wo,
 			model.wy})
 	}
+	getMax := func(a []float32) int {
+		max := float32(0)
+		idx := 0
+		for i, val := range a {
+			if val > max {
+				idx = i
+				max = val
+			}
+		}
+		return idx
+	}
 	for i, computedVector := range tset.GetComputedVectors() {
-		t.Log(tset.expectedValues[i])
-		t.Log(computedVector.Value().Data().([]float32))
+		val := getMax(computedVector.Value().Data().([]float32))
+		if tset.expectedValues[i] != val {
+			t.Log(computedVector.Value().Data().([]float32))
+			t.Fatal("Bad result")
+		}
+
 	}
 }
