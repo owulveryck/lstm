@@ -46,11 +46,11 @@ func TestCost(t *testing.T) {
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
 	for i := 0; i < 100; i++ {
-		cost, _, err := model.cost(tset)
+		cost, perplexity, err := model.cost(tset)
 		if err != nil {
 			t.Fatal(err)
 		}
-		g := model.g.SubgraphRoots(cost)
+		g := model.g.SubgraphRoots(cost, perplexity)
 		machine := G.NewLispMachine(g)
 		if err := machine.RunAll(); err != nil {
 			t.Fatal(err)
