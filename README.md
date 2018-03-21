@@ -1,2 +1,4 @@
 # charRNN
-LSTM based on go and gorgonia
+
+Simple LSTM based on [gorgonia](gorgonia.org/gorgonia)
+

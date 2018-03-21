@@ -17,3 +17,8 @@ type Trainer interface {
 	// for example is the expected output is []int{0,0,1,0,0}, it returns 2
 	GetExpectedValue(offset int) (int, error)
 }
+
+// FullTrainer object can return subtrainers
+type FullTrainer interface {
+	GetTrainer() (Trainer, error)
+}

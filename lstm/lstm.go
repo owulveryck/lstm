@@ -49,39 +49,3 @@ func (m *Model) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell 
 	dataSet.WriteComputedVector(prob)
 	return m.forwardStep(dataSet, ht, ct, step+1)
 }
-
-// the cost function
-func (m *Model) cost(dataSet datasetter.Trainer) (cost, perplexity *G.Node, err error) {
-	hidden, cell, err := m.forwardStep(dataSet, m.prevHidden, m.prevCell, 0)
-	if err != nil {
-		return nil, nil, err
-	}
-	var loss, perp *G.Node
-	// Evaluate the cost
-	for i, computedVector := range dataSet.GetComputedVectors() {
-		expectedValue, err := dataSet.GetExpectedValue(i)
-		if err != nil {
-			return nil, nil, err
-		}
-		logprob := G.Must(G.Neg(G.Must(G.Log(computedVector))))
-		loss = G.Must(G.Slice(logprob, G.S(expectedValue)))
-		log2prob := G.Must(G.Neg(G.Must(G.Log2(computedVector))))
-		perp = G.Must(G.Slice(log2prob, G.S(expectedValue)))
-
-		if cost == nil {
-			cost = loss
-		} else {
-			cost = G.Must(G.Add(cost, loss))
-		}
-		G.WithName("Cost")(cost)
-
-		if perplexity == nil {
-			perplexity = perp
-		} else {
-			perplexity = G.Must(G.Add(perplexity, perp))
-		}
-	}
-	m.prevHidden = hidden
-	m.prevCell = cell
-	return
-}
