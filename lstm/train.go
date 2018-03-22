@@ -2,6 +2,7 @@ package lstm
 
 import (
 	"context"
+	"sync"
 
 	"github.com/owulveryck/charRNN/datasetter"
 	G "gorgonia.org/gorgonia"
@@ -48,58 +49,69 @@ type TrainingInfos struct {
 	Step       int
 	Perplexity float32
 	Cost       float32
-	Err        error
-	End        bool
 }
 
 // Train ...
-func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G.Solver) chan TrainingInfos {
+func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G.Solver, pauseChan <-chan struct{}) (<-chan TrainingInfos, <-chan error) {
 	infoChan := make(chan TrainingInfos, 0)
+	step := 0
+	errc := make(chan error, 1)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	paused := false
+
 	go func() {
-		for step := 0; true; step++ {
-			trainer, err := dset.GetTrainer()
-			if err != nil {
-				infoChan <- TrainingInfos{
-					Step: step,
-					Err:  err,
-					End:  true,
-				}
-				return
-			}
-			cost, perplexity, err := m.cost(trainer)
-			if err != nil {
-				infoChan <- TrainingInfos{
-					Step: step,
-					Err:  err,
-					End:  true,
-				}
-				return
-			}
-			g := m.g.SubgraphRoots(cost, perplexity)
-			machine := G.NewLispMachine(g)
-			if err := machine.RunAll(); err != nil {
-				infoChan <- TrainingInfos{
-					Step: step,
-					Err:  err,
-					End:  true,
-				}
-				return
-			}
-			// send infos about this execution step in a non blocking channel
+		for {
 			select {
-			case infoChan <- TrainingInfos{
-				Perplexity: perplexity.Value().Data().(float32),
-				Cost:       cost.Value().Data().(float32),
-				Step:       step,
-				Err:        nil,
-				End:        false,
-			}:
+			case <-ctx.Done():
+				errc <- nil
+				wg.Done()
+				return
+			case <-pauseChan:
+				paused = true
+			default:
+				if paused {
+					<-pauseChan
+					paused = false
+				}
+				step++
+				trainer, err := dset.GetTrainer()
+				if err != nil {
+					errc <- err
+					wg.Done()
+					return
+				}
+				cost, perplexity, err := m.cost(trainer)
+				if err != nil {
+					errc <- err
+					wg.Done()
+					return
+				}
+				g := m.g.SubgraphRoots(cost, perplexity)
+				machine := G.NewLispMachine(g)
+				if err := machine.RunAll(); err != nil {
+					errc <- err
+					wg.Done()
+					return
+				}
+				// send infos about this execution step in a non blocking channel
+				select {
+				case infoChan <- TrainingInfos{
+					Perplexity: perplexity.Value().Data().(float32),
+					Cost:       cost.Value().Data().(float32),
+					Step:       step,
+				}:
+				}
+				solver.Step(G.Nodes{
+					m.biasC, m.biasF, m.biasI, m.biasO, m.biasY,
+					m.uc, m.uf, m.ui, m.uo,
+					m.wc, m.wf, m.wi, m.wo, m.wy})
 			}
-			solver.Step(G.Nodes{
-				m.biasC, m.biasF, m.biasI, m.biasO, m.biasY,
-				m.uc, m.uf, m.ui, m.uo,
-				m.wc, m.wf, m.wi, m.wo, m.wy})
 		}
 	}()
-	return infoChan
+	go func() {
+		wg.Wait()
+		close(infoChan)
+	}()
+	return infoChan, errc
 }
