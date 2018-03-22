@@ -2,6 +2,7 @@ package lstm
 
 import (
 	"context"
+	"io"
 	"testing"
 
 	G "gorgonia.org/gorgonia"
@@ -81,7 +82,7 @@ func TestTrain(t *testing.T) {
 			[]float32{0, 0, 0, 0, 1},
 		},
 		expectedValues: []int{1, 2, 3, 4, 0},
-		maxEpoch:       599,
+		maxEpoch:       10,
 	}
 	learnrate := 0.01
 	l2reg := 1e-6
@@ -98,7 +99,13 @@ func TestTrain(t *testing.T) {
 				t.Log(computedVector.Value().Data().([]float32))
 			}
 		case err := <-errc:
-			t.Fatal(err)
+			if err == io.EOF {
+				close(pause)
+				return
+			}
+			if err != nil && err != io.EOF {
+				t.Fatal(err)
+			}
 		}
 	}
 }
