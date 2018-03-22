@@ -14,7 +14,7 @@ func (m *Model) Predict(ctx context.Context, dataSet datasetter.ReadWriter) erro
 		return err
 	}
 	g := m.g.SubgraphRoots(dataSet.GetComputedVectors()...)
-	machine := G.NewLispMachine(g)
+	machine := G.NewLispMachine(g, G.ExecuteFwdOnly())
 	if err := machine.RunAll(); err != nil {
 		return err
 	}
