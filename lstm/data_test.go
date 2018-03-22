@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/owulveryck/charRNN/datasetter"
 	G "gorgonia.org/gorgonia"
 	"gorgonia.org/tensor"
 )
@@ -65,6 +66,8 @@ type testSet struct {
 	expectedValues []int
 	offset         int
 	output         G.Nodes
+	epoch          int
+	maxEpoch       int
 }
 
 func (t *testSet) ReadInputVector(g *G.ExprGraph) (*G.Node, error) {
@@ -89,4 +92,12 @@ func (t *testSet) GetComputedVectors() G.Nodes {
 
 func (t *testSet) GetExpectedValue(offset int) (int, error) {
 	return t.expectedValues[offset], nil
+}
+
+func (t *testSet) GetTrainer() (datasetter.Trainer, error) {
+	if t.epoch <= t.maxEpoch {
+		t.epoch++
+		return t, nil
+	}
+	return nil, io.EOF
 }
