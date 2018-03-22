@@ -91,21 +91,19 @@ func TestTrain(t *testing.T) {
 
 	pause := make(chan struct{})
 	infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
-	for {
-		select {
-		case infos := <-infoChan:
-			t.Log(infos)
-			for _, computedVector := range tset.GetComputedVectors() {
-				t.Log(computedVector.Value().Data().([]float32))
-			}
-		case err := <-errc:
-			if err == io.EOF {
-				close(pause)
-				return
-			}
-			if err != nil && err != io.EOF {
-				t.Fatal(err)
-			}
+	for infos := range infoChan {
+		t.Log(infos)
+		for _, computedVector := range tset.GetComputedVectors() {
+			t.Log(computedVector.Value().Data().([]float32))
 		}
 	}
+	err := <-errc
+	if err == io.EOF {
+		close(pause)
+		return
+	}
+	if err != nil && err != io.EOF {
+		t.Fatal(err)
+	}
+
 }

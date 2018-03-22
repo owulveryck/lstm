@@ -2,6 +2,7 @@ package lstm
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/owulveryck/charRNN/datasetter"
@@ -51,7 +52,7 @@ type TrainingInfos struct {
 	Cost       float32
 }
 
-// Train ...
+// Train the model
 func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G.Solver, pauseChan <-chan struct{}) (<-chan TrainingInfos, <-chan error) {
 	infoChan := make(chan TrainingInfos, 0)
 	step := 0
@@ -61,6 +62,11 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 	paused := false
 
 	go func() {
+		if len(pauseChan) != 0 {
+			errc <- errors.New("pauseChan must not be buffered")
+			wg.Done()
+			return
+		}
 		for {
 			select {
 			case <-ctx.Done():
