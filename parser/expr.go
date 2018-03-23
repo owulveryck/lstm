@@ -7,10 +7,11 @@ import __yyfmt__ "fmt"
 import (
 	"bytes"
 	"fmt"
-	G "gorgonia.org/gorgonia"
 	"log"
 	"math/big"
 	"unicode/utf8"
+
+	G "gorgonia.org/gorgonia"
 )
 
 //line expr.y:21
@@ -124,11 +125,11 @@ L:
 		return tanh
 	default:
 
-		// OWK Here we analyse the dictionnary
+		// OWK Here we analyse the dictionary
 		yylval.node = &G.Node{}
 		val, ok := x.dico[b.String()]
 		if !ok {
-			x.Error("Value does not exist in the dictionnary: " + b.String())
+			x.Error("Value does not exist in the dictionary: " + b.String())
 			return eof
 		}
 		yylval.node = val
