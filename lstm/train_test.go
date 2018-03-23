@@ -12,11 +12,11 @@ func TestCost(t *testing.T) {
 	model := newModelFromBackends(testBackends(5, 5, 10))
 	tset := &testSet{
 		values: [][]float32{
-			[]float32{1, 0, 0, 0, 0},
-			[]float32{0, 1, 0, 0, 0},
-			[]float32{0, 0, 1, 0, 0},
-			[]float32{0, 0, 0, 1, 0},
-			[]float32{0, 0, 0, 0, 1},
+			{1, 0, 0, 0, 0},
+			{0, 1, 0, 0, 0},
+			{0, 0, 1, 0, 0},
+			{0, 0, 0, 1, 0},
+			{0, 0, 0, 0, 1},
 		},
 		expectedValues: []int{1, 2, 3, 4, 0},
 	}
@@ -75,11 +75,11 @@ func TestTrain(t *testing.T) {
 	model := newModelFromBackends(testBackends(5, 5, 10))
 	tset := &testSet{
 		values: [][]float32{
-			[]float32{1, 0, 0, 0, 0},
-			[]float32{0, 1, 0, 0, 0},
-			[]float32{0, 0, 1, 0, 0},
-			[]float32{0, 0, 0, 1, 0},
-			[]float32{0, 0, 0, 0, 1},
+			{1, 0, 0, 0, 0},
+			{0, 1, 0, 0, 0},
+			{0, 0, 1, 0, 0},
+			{0, 0, 0, 1, 0},
+			{0, 0, 0, 0, 1},
 		},
 		expectedValues: []int{1, 2, 3, 4, 0},
 		maxEpoch:       10,
