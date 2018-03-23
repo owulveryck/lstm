@@ -34,15 +34,15 @@ func TestParse(t *testing.T) {
 		expected []float32
 	}
 	for _, test := range []test{
-		test{
+		{
 			`1*Wf·hₜ₋₁+ Wf·xₜ+ bf`,
 			[]float32{5, 5},
 		},
-		test{
+		{
 			`σ(1*Wf·hₜ₋₁+ Wf·xₜ+ bf)`,
 			[]float32{0.9933072, 0.9933072},
 		},
-		test{
+		{
 			`tanh(1*Wf·hₜ₋₁+ Wf·xₜ+ bf)`,
 			[]float32{0.9999092, 0.9999092},
 		},
