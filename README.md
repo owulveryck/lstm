@@ -1,8 +1,4 @@
-[![](https://godoc.org/github.com/owulveryck/charrnn?status.svg)](http://godoc.org/github.com/owulveryck/charrnn)
-[![Report card](https://goreportcard.com/badge/github.com/owulveryck/charrnn)](https://goreportcard.com/report/github.com/owulveryck/charrnn)
+[![](https://godoc.org/github.com/owulveryck/charrnn/lstm?status.svg)](http://godoc.org/github.com/owulveryck/charrnn/lstm)
+[![Report card](https://goreportcard.com/badge/github.com/owulveryck/charrnn/lstm)](https://goreportcard.com/report/github.com/owulveryck/charrnn/lstm)
 
-# charRNN
-
-Simple LSTM implemented on [gorgonia](https://godoc.org/gorgonia.org/gorgonia)
-
-The Neural Net implementation is in the LSTM package and lives in the lstm subdirectory
+This lib is the engine of the LSTM

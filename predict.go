@@ -3,7 +3,7 @@ package lstm
 import (
 	"context"
 
-	"github.com/owulveryck/charRNN/datasetter"
+	"github.com/owulveryck/lstm/datasetter"
 	G "gorgonia.org/gorgonia"
 	"gorgonia.org/tensor"
 )

@@ -3,7 +3,7 @@ package lstm
 import (
 	"io"
 
-	"github.com/owulveryck/charRNN/datasetter"
+	"github.com/owulveryck/lstm/datasetter"
 	G "gorgonia.org/gorgonia"
 )
 

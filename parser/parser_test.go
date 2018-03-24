@@ -3,7 +3,7 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/owulveryck/charRNN/parser"
+	"github.com/owulveryck/lstm/parser"
 	G "gorgonia.org/gorgonia"
 	"gorgonia.org/tensor"
 )

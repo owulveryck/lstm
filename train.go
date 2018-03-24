@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/owulveryck/charRNN/datasetter"
+	"github.com/owulveryck/lstm/datasetter"
 	G "gorgonia.org/gorgonia"
 )
 
