@@ -67,16 +67,19 @@ func (s *Section) GetExpectedValue(offset int) (int, error) {
 	return s.sentence[offset], nil
 }
 
-// GetTrainingSet is returning the self object with the
-// currentSection field adapted to it contains a full set of runes
+// GetTrainingSet returns a pointer so a Section. It reads batchSize runes
+// and add it to the returned section.
+// The offset of the underlying io.ReadSeeker is set to the position it had
+// when entering the function + step * runes * rune_size
+// Any error in reading is returned
 func (t *TrainingSet) GetTrainingSet() (*Section, error) {
-	pos, err := t.rs.Seek(0, io.SeekCurrent)
-	if err != nil {
-		return nil, err
-	}
 	buf := bufio.NewReader(t.rs)
 	// if we are not at the begining of the file,
 	// we have done already a pass, then move the cursor
+	// This is done at the begining of the file so whatever error could be return
+	// If it was done at the end of the pass, any error would lead to
+	// be interpreted by the caller of the func as "unable to provide a Section"
+	// and the corresponding section would be discarded
 	if t.pass != 0 {
 		// move x step further
 		for i := 0; i < t.step; i++ {
@@ -85,6 +88,10 @@ func (t *TrainingSet) GetTrainingSet() (*Section, error) {
 				return nil, err
 			}
 		}
+	}
+	pos, err := t.rs.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil, err
 	}
 
 	section := &Section{
