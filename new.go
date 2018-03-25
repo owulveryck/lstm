@@ -32,7 +32,7 @@ type backends struct {
 	BiasY []float32
 }
 
-// MarshalBinary for backup. This function saves the content of the weights matrices and the biais but not the graph structure
+// MarshalBinary for backup. This function saves the equations, the content of the weights matrices and the biais but not the graph structure
 func (m Model) MarshalBinary() ([]byte, error) {
 	var bkp backends
 	bkp.InputSize = m.inputSize
