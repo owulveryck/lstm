@@ -11,10 +11,12 @@ import (
 
 // TrainingSet ...
 type TrainingSet struct {
-	rs        io.Reader
+	rs        io.ReadSeeker
 	runeToIdx func(r rune) (int, error)
+	batchSize int
 	vocabSize int
 	step      int
+	pass      int
 }
 
 // Section ...
@@ -26,7 +28,7 @@ type Section struct {
 }
 
 // NewTrainingSet from a ReadSeeker
-func NewTrainingSet(rs io.Reader, runeToIdx func(r rune) (int, error), vocabSize, step int) *TrainingSet {
+func NewTrainingSet(rs io.ReadSeeker, runeToIdx func(r rune) (int, error), vocabSize, batchsize, step int) *TrainingSet {
 	return &TrainingSet{
 		rs:        rs,
 		vocabSize: vocabSize,
@@ -68,13 +70,29 @@ func (s *Section) GetExpectedValue(offset int) (int, error) {
 // GetTrainingSet is returning the self object with the
 // currentSection field adapted to it contains a full set of runes
 func (t *TrainingSet) GetTrainingSet() (*Section, error) {
+	pos, err := t.rs.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil, err
+	}
+	buf := bufio.NewReader(t.rs)
+	// if we are not at the begining of the file,
+	// we have done already a pass, then move the cursor
+	if t.pass != 0 {
+		// move x step further
+		for i := 0; i < t.step; i++ {
+			_, _, err := buf.ReadRune()
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	section := &Section{
 		vocabSize: t.vocabSize,
 		offset:    0,
 		sentence:  make([]int, t.step),
 	}
-	buf := bufio.NewReader(t.rs)
-	for i := 0; i < t.step; i++ {
+	for i := 0; i < t.batchSize; i++ {
 		rne, _, err := buf.ReadRune()
 		idx, err := t.runeToIdx(rne)
 		if err != nil {
@@ -82,6 +100,8 @@ func (t *TrainingSet) GetTrainingSet() (*Section, error) {
 		}
 		section.sentence[i] = idx
 	}
-	// TODO: set the offset to currentoffset+step
+	// put the offset back where is was
+	_, err = t.rs.Seek(pos, io.SeekStart)
+	t.pass++
 	return section, nil
 }
