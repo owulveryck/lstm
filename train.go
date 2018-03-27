@@ -7,6 +7,7 @@ import (
 
 	"github.com/owulveryck/lstm/datasetter"
 	G "gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
 // the cost function
@@ -67,6 +68,7 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 			wg.Done()
 			return
 		}
+		var hiddenT, cellT tensor.Tensor
 		for {
 			select {
 			case <-ctx.Done():
@@ -81,7 +83,13 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					paused = false
 				}
 				step++
-				lstm := m.newLSTM()
+				if hiddenT == nil {
+					hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize))
+				}
+				if cellT == nil {
+					cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize))
+				}
+				lstm := m.newLSTM(hiddenT, cellT)
 				trainer, err := dset.GetTrainer()
 				if err != nil {
 					errc <- err
@@ -94,13 +102,15 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					wg.Done()
 					return
 				}
-				//g := m.g.SubgraphRoots(cost, perplexity)
-				machine := G.NewLispMachine(lstm.g)
+				g := lstm.g.SubgraphRoots(cost, perplexity)
+				machine := G.NewTapeMachine(g)
 				if err := machine.RunAll(); err != nil {
 					errc <- err
 					wg.Done()
 					return
 				}
+				hiddenT = (*lstm).prevHidden.Value().(tensor.Tensor)
+				cellT = (*lstm).prevCell.Value().(tensor.Tensor)
 				// send infos about this execution step in a non blocking channel
 				select {
 				case infoChan <- TrainingInfos{
@@ -108,6 +118,7 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					Cost:       cost.Value().Data().(float32),
 					Step:       step,
 				}:
+				default:
 				}
 				solver.Step(G.Nodes{
 					lstm.biasC, lstm.biasF, lstm.biasI, lstm.biasO, lstm.biasY,

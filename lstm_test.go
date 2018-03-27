@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	G "gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
 func TestForwardStep(t *testing.T) {
@@ -16,7 +17,10 @@ func TestForwardStep(t *testing.T) {
 			{0, 0, 0, 1, 0},
 			{0, 0, 0, 0, 1},
 		}}
-	lstm := model.newLSTM()
+	hiddenT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(model.hiddenSize))
+	cellT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(model.hiddenSize))
+	lstm := model.newLSTM(hiddenT, cellT)
+	//lstm := model.newLSTM()
 	_, _, err := lstm.forwardStep(tset, lstm.prevHidden, lstm.prevCell, 0)
 	if err != nil {
 		t.Fatal(err)

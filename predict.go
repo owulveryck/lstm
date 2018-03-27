@@ -10,10 +10,10 @@ import (
 
 // Predict ...
 func (m *Model) Predict(ctx context.Context, dataSet datasetter.ReadWriter) error {
-	lstm := m.newLSTM()
-	// We need an empty memory to start...
 	hiddenT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize))
 	cellT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize))
+	lstm := m.newLSTM(hiddenT, cellT)
+	// We need an empty memory to start...
 	prevHidden := G.NewVector(lstm.g, tensor.Float32, G.WithName("hₜ₋₁"), G.WithShape(m.hiddenSize), G.WithValue(hiddenT))
 	prevCell := G.NewVector(lstm.g, tensor.Float32, G.WithName("Cₜ₋₁"), G.WithShape(m.hiddenSize), G.WithValue(cellT))
 	_, _, err := lstm.forwardStep(dataSet, prevHidden, prevCell, 0)

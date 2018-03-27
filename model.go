@@ -64,7 +64,7 @@ type lstm struct {
 	prevCell   *G.Node
 }
 
-func (m *Model) newLSTM() *lstm {
+func (m *Model) newLSTM(hiddenT, cellT tensor.Tensor) *lstm {
 	lstm := new(lstm)
 	g := G.NewGraph()
 	lstm.g = g
@@ -117,8 +117,6 @@ func (m *Model) newLSTM() *lstm {
 	p.Set(`By`, lstm.biasY)
 
 	// this is to simulate a default "previous" state
-	hiddenT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
-	cellT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
 	lstm.prevHidden = G.NewVector(g, tensor.Float32, G.WithName("hₜ₋₁"), G.WithShape(hiddenSize), G.WithValue(hiddenT))
 	lstm.prevCell = G.NewVector(g, tensor.Float32, G.WithName("Cₜ₋₁"), G.WithShape(hiddenSize), G.WithValue(cellT))
 

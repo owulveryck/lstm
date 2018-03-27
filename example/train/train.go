@@ -38,30 +38,33 @@ func idxToRune(i int) (rune, error) {
 }
 
 func main() {
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
 	vocabSize := len([]rune(runes))
-	tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 25, 1)
-	model := lstm.NewModel(vocabSize, vocabSize, 100)
-	learnrate := 0.01
+	model := lstm.NewModel(vocabSize, vocabSize, 150)
+	learnrate := 0.1
 	l2reg := 1e-6
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
 
-	pause := make(chan struct{})
-	infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
-	for infos := range infoChan {
-		fmt.Printf("\t\t|%v\n", infos)
-	}
-	err = <-errc
-	if err == io.EOF {
-		close(pause)
-		return
-	}
-	if err != nil && err != io.EOF {
-		log.Fatal(err)
+	for i := 0; i < 100; i++ {
+		f, err := os.Open(filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 35, 1)
+		pause := make(chan struct{})
+		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
+		for infos := range infoChan {
+			fmt.Printf("\t\t|%v\n", infos)
+		}
+		err = <-errc
+		if err == io.EOF {
+			close(pause)
+			return
+		}
+		if err != nil && err != io.EOF {
+			log.Fatal(err)
+		}
+		f.Close()
 	}
 
 }

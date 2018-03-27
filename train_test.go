@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	G "gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
 func TestCost(t *testing.T) {
@@ -24,33 +25,41 @@ func TestCost(t *testing.T) {
 	l2reg := 1e-6
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
+	var hiddenT, cellT tensor.Tensor
 	for i := 0; i < 100; i++ {
-		lstm := model.newLSTM()
-		_, _, err := lstm.cost(tset)
-		//cost, perplexity, err := lstm.cost(tset)
+		if hiddenT == nil {
+			hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(10))
+		}
+		if cellT == nil {
+			cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(10))
+		}
+		l := model.newLSTM(hiddenT, cellT)
+		cost, perplexity, err := l.cost(tset)
 		if err != nil {
 			t.Fatal(err)
 		}
-		//g := model.g.SubgraphRoots(cost, perplexity)
-		machine := G.NewLispMachine(lstm.g)
+		g := l.g.SubgraphRoots(cost, perplexity)
+		machine := G.NewLispMachine(g)
 		if err := machine.RunAll(); err != nil {
 			t.Fatal(err)
 		}
 		solver.Step(G.Nodes{
-			lstm.biasC,
-			lstm.biasF,
-			lstm.biasI,
-			lstm.biasO,
-			lstm.biasY,
-			lstm.uc,
-			lstm.uf,
-			lstm.ui,
-			lstm.uo,
-			lstm.wc,
-			lstm.wf,
-			lstm.wi,
-			lstm.wo,
-			lstm.wy})
+			l.biasC,
+			l.biasF,
+			l.biasI,
+			l.biasO,
+			l.biasY,
+			l.uc,
+			l.uf,
+			l.ui,
+			l.uo,
+			l.wc,
+			l.wf,
+			l.wi,
+			l.wo,
+			l.wy})
+		hiddenT = (*l).prevHidden.Value().(tensor.Tensor)
+		cellT = (*l).prevCell.Value().(tensor.Tensor)
 	}
 	getMax := func(a []float32) int {
 		max := float32(0)

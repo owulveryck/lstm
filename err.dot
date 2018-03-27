@@ -10,10 +10,10 @@ digraph fullGraph {
 	rank=max;
 	subgraph cluster_inputs {
 	label=inputs;
-	Node_0xc42016c820 [ fontname=monospace, label=<
+	Node_0xc42058a5b0 [ fontname=monospace, label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" PORT="anchor"  COLOR="#00FF00;" BGCOLOR="lightyellow">
 
-<TR><TD>9</TD><TD>Wc :: Matrix float32</TD></TR>
+<TR><TD>6</TD><TD>Wf :: Matrix float32</TD></TR>
 
 <TR><TD>Shape</TD><TD>(10, 5)</TD></TR>
 <TR><TD>Overwrites Input -1</TD><TD>Data On: CPU</TD></TR>
