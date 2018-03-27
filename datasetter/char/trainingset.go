@@ -88,14 +88,12 @@ func (t *TrainingSet) GetTrainer() (datasetter.Trainer, error) {
 	// If it was done at the end of the pass, any error would lead to
 	// be interpreted by the caller of the func as "unable to provide a Section"
 	// and the corresponding section would be discarded
-	fmt.Printf("Pass: %v |", t.pass)
 
 	section := &Section{
 		vocabSize: t.vocabSize,
 		offset:    0,
 		sentence:  make([]int, t.batchSize),
 	}
-	fmt.Printf("batchsize: %v | ", t.batchSize)
 	// Peek as many bytes as needed for peeking as many runes needed
 	end := false
 	for i := 0; !end; i++ {
@@ -106,7 +104,6 @@ func (t *TrainingSet) GetTrainer() (datasetter.Trainer, error) {
 		if utf8.Valid(b) && utf8.RuneCount(b) == t.batchSize {
 			end = true
 			for i, rne := range []rune(string(b)) {
-				fmt.Printf("%v", string(rne))
 				idx, err := t.runeToIdx(rne)
 				if err != nil {
 					return nil, err

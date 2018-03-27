@@ -38,30 +38,59 @@ func idxToRune(i int) (rune, error) {
 }
 
 func main() {
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
 	vocabSize := len([]rune(runes))
-	tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 25, 1)
 	model := lstm.NewModel(vocabSize, vocabSize, 100)
-	learnrate := 0.01
+	learnrate := 0.001
 	l2reg := 1e-6
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
 
-	pause := make(chan struct{})
-	infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
-	for infos := range infoChan {
-		fmt.Printf("\t\t|%v\n", infos)
-	}
-	err = <-errc
-	if err == io.EOF {
-		close(pause)
-		return
-	}
-	if err != nil && err != io.EOF {
-		log.Fatal(err)
+	for i := 0; i < 100; i++ {
+		f, err := os.Open(filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 25, 3)
+		pause := make(chan struct{})
+		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
+		iter := 0
+		for infos := range infoChan {
+			if iter%10 == 0 {
+				fmt.Printf("%v\n", infos)
+			}
+			if iter%300 == 0 {
+				fmt.Println("\nGoing to predict")
+				pause <- struct{}{}
+				prediction := char.NewPrediction("Monsieur", runeToIdx, 10, vocabSize)
+				model.Predict(context.TODO(), prediction)
+				for _, node := range prediction.GetComputedVectors() {
+					output := node.Value().Data().([]float32)
+					max := float32(0)
+					idx := 0
+					for i := range output {
+						if output[i] >= max {
+							idx = i
+						}
+					}
+					rne, err := idxToRune(idx)
+					if err != nil {
+						log.Fatal(err)
+					}
+					fmt.Printf(string(rne))
+				}
+				pause <- struct{}{}
+			}
+			iter++
+		}
+		err = <-errc
+		if err == io.EOF {
+			close(pause)
+			return
+		}
+		if err != nil && err != io.EOF {
+			log.Fatal(err)
+		}
+		f.Close()
 	}
 
 }
