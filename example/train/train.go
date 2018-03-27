@@ -53,7 +53,7 @@ func main() {
 		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 35, 1)
 		pause := make(chan struct{})
 		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
-		iter := 0
+		iter := 1
 		for infos := range infoChan {
 			if iter%100 == 0 {
 				fmt.Printf("%v\n", infos)

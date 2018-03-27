@@ -129,7 +129,9 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					lstm.biasC, lstm.biasF, lstm.biasI, lstm.biasO, lstm.biasY,
 					lstm.uc, lstm.uf, lstm.ui, lstm.uo,
 					lstm.wc, lstm.wf, lstm.wi, lstm.wo, lstm.wy})
+				machine.Reset() // Reset is necessary in a loop like this
 				lstm.g.UnbindAll()
+
 			}
 		}
 	}()
