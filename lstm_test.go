@@ -16,11 +16,12 @@ func TestForwardStep(t *testing.T) {
 			{0, 0, 0, 1, 0},
 			{0, 0, 0, 0, 1},
 		}}
-	_, _, err := model.forwardStep(tset, model.prevHidden, model.prevCell, 0)
+	lstm := model.newLSTM()
+	_, _, err := lstm.forwardStep(tset, lstm.prevHidden, lstm.prevCell, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine := G.NewLispMachine(model.g, G.ExecuteFwdOnly())
+	machine := G.NewLispMachine(lstm.g, G.ExecuteFwdOnly())
 	if err := machine.RunAll(); err != nil {
 		t.Fatal(err)
 	}

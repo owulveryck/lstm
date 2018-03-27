@@ -10,8 +10,8 @@ import (
 )
 
 // the cost function
-func (m *Model) cost(dataSet datasetter.Trainer) (cost, perplexity *G.Node, err error) {
-	hidden, cell, err := m.forwardStep(dataSet, m.prevHidden, m.prevCell, 0)
+func (l *lstm) cost(dataSet datasetter.Trainer) (cost, perplexity *G.Node, err error) {
+	hidden, cell, err := l.forwardStep(dataSet, l.prevHidden, l.prevCell, 0)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -40,8 +40,8 @@ func (m *Model) cost(dataSet datasetter.Trainer) (cost, perplexity *G.Node, err 
 			perplexity = G.Must(G.Add(perplexity, perp))
 		}
 	}
-	m.prevHidden = hidden
-	m.prevCell = cell
+	l.prevHidden = hidden
+	l.prevCell = cell
 	return
 }
 
@@ -81,20 +81,21 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					paused = false
 				}
 				step++
+				lstm := m.newLSTM()
 				trainer, err := dset.GetTrainer()
 				if err != nil {
 					errc <- err
 					wg.Done()
 					return
 				}
-				cost, perplexity, err := m.cost(trainer)
+				cost, perplexity, err := lstm.cost(trainer)
 				if err != nil {
 					errc <- err
 					wg.Done()
 					return
 				}
-				g := m.g.SubgraphRoots(cost, perplexity)
-				machine := G.NewLispMachine(g)
+				//g := m.g.SubgraphRoots(cost, perplexity)
+				machine := G.NewLispMachine(lstm.g)
 				if err := machine.RunAll(); err != nil {
 					errc <- err
 					wg.Done()
@@ -109,9 +110,9 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 				}:
 				}
 				solver.Step(G.Nodes{
-					m.biasC, m.biasF, m.biasI, m.biasO, m.biasY,
-					m.uc, m.uf, m.ui, m.uo,
-					m.wc, m.wf, m.wi, m.wo, m.wy})
+					lstm.biasC, lstm.biasF, lstm.biasI, lstm.biasO, lstm.biasY,
+					lstm.uc, lstm.uf, lstm.ui, lstm.uo,
+					lstm.wc, lstm.wf, lstm.wi, lstm.wo, lstm.wy})
 			}
 		}
 	}()

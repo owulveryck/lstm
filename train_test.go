@@ -25,30 +25,32 @@ func TestCost(t *testing.T) {
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
 	for i := 0; i < 100; i++ {
-		cost, perplexity, err := model.cost(tset)
+		lstm := model.newLSTM()
+		_, _, err := lstm.cost(tset)
+		//cost, perplexity, err := lstm.cost(tset)
 		if err != nil {
 			t.Fatal(err)
 		}
-		g := model.g.SubgraphRoots(cost, perplexity)
-		machine := G.NewLispMachine(g)
+		//g := model.g.SubgraphRoots(cost, perplexity)
+		machine := G.NewLispMachine(lstm.g)
 		if err := machine.RunAll(); err != nil {
 			t.Fatal(err)
 		}
 		solver.Step(G.Nodes{
-			model.biasC,
-			model.biasF,
-			model.biasI,
-			model.biasO,
-			model.biasY,
-			model.uc,
-			model.uf,
-			model.ui,
-			model.uo,
-			model.wc,
-			model.wf,
-			model.wi,
-			model.wo,
-			model.wy})
+			lstm.biasC,
+			lstm.biasF,
+			lstm.biasI,
+			lstm.biasO,
+			lstm.biasY,
+			lstm.uc,
+			lstm.uf,
+			lstm.ui,
+			lstm.uo,
+			lstm.wc,
+			lstm.wf,
+			lstm.wi,
+			lstm.wo,
+			lstm.wy})
 	}
 	getMax := func(a []float32) int {
 		max := float32(0)
