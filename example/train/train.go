@@ -39,7 +39,7 @@ func idxToRune(i int) (rune, error) {
 
 func main() {
 	vocabSize := len([]rune(runes))
-	model := lstm.NewModel(vocabSize, vocabSize, 150)
+	model := lstm.NewModel(vocabSize, vocabSize, 100)
 	learnrate := 0.1
 	l2reg := 1e-6
 	clipVal := float64(5)
@@ -50,11 +50,37 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 35, 1)
+		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 25, 3)
 		pause := make(chan struct{})
 		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
+		iter := 0
 		for infos := range infoChan {
-			fmt.Printf("\t\t|%v\n", infos)
+			if iter%100 == 0 {
+				fmt.Printf("%v\n", infos)
+			}
+			if iter%300 == 0 {
+				fmt.Println("\nGoing to predict")
+				pause <- struct{}{}
+				prediction := char.NewPrediction("Monsieur", runeToIdx, 10, vocabSize)
+				model.Predict(context.TODO(), prediction)
+				for _, node := range prediction.GetComputedVectors() {
+					output := node.Value().Data().([]float32)
+					max := float32(0)
+					idx := 0
+					for i := range output {
+						if output[i] >= max {
+							idx = i
+						}
+					}
+					rne, err := idxToRune(idx)
+					if err != nil {
+						log.Fatal(err)
+					}
+					fmt.Printf(string(rne))
+				}
+				pause <- struct{}{}
+			}
+			iter++
 		}
 		err = <-errc
 		if err == io.EOF {

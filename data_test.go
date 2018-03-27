@@ -3,6 +3,7 @@ package lstm
 import (
 	"fmt"
 	"io"
+	"math/rand"
 
 	"github.com/owulveryck/lstm/datasetter"
 	G "gorgonia.org/gorgonia"
@@ -19,43 +20,43 @@ func testBackends(inputSize, outputSize int, hiddenSize int) *backends {
 	back.HiddenSize = hiddenSize
 	back.Wi = make([]float32, hiddenSize*inputSize)
 	for i := 0; i < hiddenSize*inputSize; i++ {
-		back.Wi[i] = initValue
+		back.Wi[i] = initValue * rand.Float32()
 	}
 	back.Ui = make([]float32, hiddenSize*hiddenSize)
 	for i := 0; i < hiddenSize*hiddenSize; i++ {
-		back.Ui[i] = initValue
+		back.Ui[i] = initValue * rand.Float32()
 	}
 	back.BiasI = make([]float32, hiddenSize)
 	back.Wo = make([]float32, hiddenSize*inputSize)
 	for i := 0; i < hiddenSize*inputSize; i++ {
-		back.Wo[i] = initValue
+		back.Wo[i] = initValue * rand.Float32()
 	}
 	back.Uo = make([]float32, hiddenSize*hiddenSize)
 	for i := 0; i < hiddenSize*hiddenSize; i++ {
-		back.Uo[i] = initValue
+		back.Uo[i] = initValue * rand.Float32()
 	}
 	back.BiasO = make([]float32, hiddenSize)
 	back.Wf = make([]float32, hiddenSize*inputSize)
 	for i := 0; i < hiddenSize*inputSize; i++ {
-		back.Wf[i] = initValue
+		back.Wf[i] = initValue * rand.Float32()
 	}
 	back.Uf = make([]float32, hiddenSize*hiddenSize)
 	for i := 0; i < hiddenSize*hiddenSize; i++ {
-		back.Uf[i] = initValue
+		back.Uf[i] = initValue * rand.Float32()
 	}
 	back.BiasF = make([]float32, hiddenSize)
 	back.Wc = make([]float32, hiddenSize*inputSize)
 	for i := 0; i < hiddenSize*inputSize; i++ {
-		back.Wc[i] = initValue
+		back.Wc[i] = initValue * rand.Float32()
 	}
 	back.Uc = make([]float32, hiddenSize*hiddenSize)
 	for i := 0; i < hiddenSize*hiddenSize; i++ {
-		back.Uc[i] = initValue
+		back.Uc[i] = initValue * rand.Float32()
 	}
 	back.BiasC = make([]float32, hiddenSize)
 	back.Wy = make([]float32, hiddenSize*outputSize)
 	for i := 0; i < hiddenSize*outputSize; i++ {
-		back.Wy[i] = initValue
+		back.Wy[i] = initValue * rand.Float32()
 	}
 	back.BiasY = make([]float32, outputSize)
 	return &back

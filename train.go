@@ -43,6 +43,8 @@ func (l *lstm) cost(dataSet datasetter.Trainer) (cost, perplexity *G.Node, err e
 	}
 	l.prevHidden = hidden
 	l.prevCell = cell
+	g := l.g.SubgraphRoots(cost, perplexity)
+	l.g = g
 	return
 }
 
@@ -102,8 +104,9 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					wg.Done()
 					return
 				}
-				g := lstm.g.SubgraphRoots(cost, perplexity)
-				machine := G.NewTapeMachine(g)
+				//g := lstm.g.SubgraphRoots(cost, perplexity)
+				//machine := G.NewTapeMachine(g)
+				machine := G.NewTapeMachine(lstm.g)
 				if err := machine.RunAll(); err != nil {
 					errc <- err
 					wg.Done()

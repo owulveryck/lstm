@@ -3,6 +3,7 @@ package lstm
 import (
 	"context"
 	"io"
+	"log"
 	"testing"
 
 	G "gorgonia.org/gorgonia"
@@ -10,7 +11,8 @@ import (
 )
 
 func TestCost(t *testing.T) {
-	model := newModelFromBackends(testBackends(5, 5, 10))
+	hiddenSize := 10
+	model := newModelFromBackends(testBackends(5, 5, hiddenSize))
 	tset := &testSet{
 		values: [][]float32{
 			{1, 0, 0, 0, 0},
@@ -28,21 +30,23 @@ func TestCost(t *testing.T) {
 	var hiddenT, cellT tensor.Tensor
 	for i := 0; i < 100; i++ {
 		if hiddenT == nil {
-			hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(10))
+			hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
 		}
 		if cellT == nil {
-			cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(10))
+			cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
 		}
 		l := model.newLSTM(hiddenT, cellT)
-		cost, perplexity, err := l.cost(tset)
+		//cost, perplexity, err := l.cost(tset)
+		_, _, err := l.cost(tset)
 		if err != nil {
 			t.Fatal(err)
 		}
-		g := l.g.SubgraphRoots(cost, perplexity)
-		machine := G.NewLispMachine(g)
+		//g := l.g.SubgraphRoots(cost, perplexity)
+		machine := G.NewLispMachine(l.g)
 		if err := machine.RunAll(); err != nil {
 			t.Fatal(err)
 		}
+		log.Println(l.wc.Value().Data().([]float32)[1])
 		solver.Step(G.Nodes{
 			l.biasC,
 			l.biasF,
