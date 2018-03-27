@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"unicode/utf8"
 
 	"github.com/owulveryck/lstm/datasetter"
 	G "gorgonia.org/gorgonia"
@@ -13,6 +14,7 @@ import (
 
 // TrainingSet ...
 type TrainingSet struct {
+	rs        io.ReadSeeker
 	buf       *bufio.Reader
 	runeToIdx func(r rune) (int, error)
 	batchSize int
@@ -35,6 +37,7 @@ func NewTrainingSet(rs io.ReadSeeker, runeToIdx func(r rune) (int, error), vocab
 		log.Fatal("batchSize cannot be less than the step")
 	}
 	return &TrainingSet{
+		rs:        rs,
 		buf:       bufio.NewReader(rs),
 		batchSize: batchsize,
 		vocabSize: vocabSize,
@@ -93,17 +96,30 @@ func (t *TrainingSet) GetTrainer() (datasetter.Trainer, error) {
 		sentence:  make([]int, t.batchSize),
 	}
 	fmt.Printf("batchsize: %v | ", t.batchSize)
-	for i := 0; i < t.batchSize; i++ {
-		rne, _, err := t.buf.ReadRune()
-		fmt.Printf("%v", string(rne))
+	// Peek as many bytes as needed for peeking as many runes needed
+	end := false
+	for i := 0; !end; i++ {
+		b, err := t.buf.Peek(i)
 		if err != nil {
 			return nil, err
 		}
-		idx, err := t.runeToIdx(rne)
+		if utf8.Valid(b) && utf8.RuneCount(b) == t.batchSize {
+			end = true
+			for i, rne := range []rune(string(b)) {
+				fmt.Printf("%v", string(rne))
+				idx, err := t.runeToIdx(rne)
+				if err != nil {
+					return nil, err
+				}
+				section.sentence[i] = idx
+			}
+		}
+	}
+	for i := 0; i < t.step; i++ {
+		_, _, err := t.buf.ReadRune()
 		if err != nil {
 			return nil, err
 		}
-		section.sentence[i] = idx
 	}
 
 	t.pass++
