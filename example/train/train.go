@@ -39,8 +39,8 @@ func idxToRune(i int) (rune, error) {
 
 func main() {
 	vocabSize := len([]rune(runes))
-	model := lstm.NewModel(vocabSize, vocabSize, 100)
-	learnrate := 0.1
+	model := lstm.NewModel(vocabSize, vocabSize, vocabSize)
+	learnrate := 0.001
 	l2reg := 1e-6
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
@@ -50,7 +50,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 25, 3)
+		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 35, 1)
 		pause := make(chan struct{})
 		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
 		iter := 0
@@ -58,10 +58,10 @@ func main() {
 			if iter%100 == 0 {
 				fmt.Printf("%v\n", infos)
 			}
-			if iter%300 == 0 {
+			if iter%500 == 0 {
 				fmt.Println("\nGoing to predict")
 				pause <- struct{}{}
-				prediction := char.NewPrediction("Monsieur", runeToIdx, 10, vocabSize)
+				prediction := char.NewPrediction("Monsieur", runeToIdx, 50, vocabSize)
 				model.Predict(context.TODO(), prediction)
 				for _, node := range prediction.GetComputedVectors() {
 					output := node.Value().Data().([]float32)
@@ -69,6 +69,7 @@ func main() {
 					idx := 0
 					for i := range output {
 						if output[i] >= max {
+							max = output[i]
 							idx = i
 						}
 					}

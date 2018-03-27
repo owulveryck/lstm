@@ -3,7 +3,6 @@ package lstm
 import (
 	"context"
 	"io"
-	"log"
 	"testing"
 
 	G "gorgonia.org/gorgonia"
@@ -23,12 +22,13 @@ func TestCost(t *testing.T) {
 		},
 		expectedValues: []int{1, 2, 3, 4, 0},
 	}
-	learnrate := 0.01
+	learnrate := 0.1
 	l2reg := 1e-6
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
 	var hiddenT, cellT tensor.Tensor
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1; i++ {
+		t.Log("Running")
 		if hiddenT == nil {
 			hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
 		}
@@ -42,11 +42,14 @@ func TestCost(t *testing.T) {
 			t.Fatal(err)
 		}
 		//g := l.g.SubgraphRoots(cost, perplexity)
-		machine := G.NewLispMachine(l.g)
+		machine := G.NewTapeMachine(l.g)
 		if err := machine.RunAll(); err != nil {
 			t.Fatal(err)
 		}
-		log.Println(l.wc.Value().Data().([]float32)[1])
+		hiddenData := (*l).prevHidden.Value().Data().([]float32)
+		cellData := (*l).prevCell.Value().Data().([]float32)
+		hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize), tensor.WithBacking(hiddenData))
+		cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize), tensor.WithBacking(cellData))
 		solver.Step(G.Nodes{
 			l.biasC,
 			l.biasF,
@@ -62,8 +65,7 @@ func TestCost(t *testing.T) {
 			l.wi,
 			l.wo,
 			l.wy})
-		hiddenT = (*l).prevHidden.Value().(tensor.Tensor)
-		cellT = (*l).prevCell.Value().(tensor.Tensor)
+		l.g.UnbindAll()
 	}
 	getMax := func(a []float32) int {
 		max := float32(0)

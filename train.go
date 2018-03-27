@@ -106,14 +106,16 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 				}
 				//g := lstm.g.SubgraphRoots(cost, perplexity)
 				//machine := G.NewTapeMachine(g)
-				machine := G.NewTapeMachine(lstm.g)
+				machine := G.NewLispMachine(lstm.g)
 				if err := machine.RunAll(); err != nil {
 					errc <- err
 					wg.Done()
 					return
 				}
-				hiddenT = (*lstm).prevHidden.Value().(tensor.Tensor)
-				cellT = (*lstm).prevCell.Value().(tensor.Tensor)
+				hiddenData := (*lstm).prevHidden.Value().Data().([]float32)
+				cellData := (*lstm).prevCell.Value().Data().([]float32)
+				hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(hiddenData))
+				cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(cellData))
 				// send infos about this execution step in a non blocking channel
 				select {
 				case infoChan <- TrainingInfos{
@@ -127,6 +129,7 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					lstm.biasC, lstm.biasF, lstm.biasI, lstm.biasO, lstm.biasY,
 					lstm.uc, lstm.uf, lstm.ui, lstm.uo,
 					lstm.wc, lstm.wf, lstm.wi, lstm.wo, lstm.wy})
+				lstm.g.UnbindAll()
 			}
 		}
 	}()

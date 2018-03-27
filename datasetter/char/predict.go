@@ -55,7 +55,7 @@ func (p *Prediction) ReadInputVector(g *G.ExprGraph) (*G.Node, error) {
 
 // WriteComputedVector ...
 func (p *Prediction) WriteComputedVector(n *G.Node) error {
-	// TODO: apply a function for the classification in order to get a vector with a uniq entry to one
+	// TODO: apply a function for the classification in order to get a one hot vector
 	p.output = append(p.output, n)
 	return nil
 }
