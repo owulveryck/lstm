@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	runes = `b«ME'àésèêüivOùquHÉa-A!ÇnJjçTByVepY,?xôXCmïW wfFU(gLNQ»R:°dPDîIktrcz.Shloâ)Gû
-`
-	filename = "../../data/tontons/input.txt"
+	runes = `;HFrch.vG
+dMgEARDKt:q$sV-Px&jzel?I!mkSyWNnB,LiaOUJfbuQwY'ZXCop3T `
+	filename = "../../data/shakespeare/input.txt"
 )
 
 var asRunes = []rune(runes)
@@ -61,7 +61,7 @@ func main() {
 			if iter%500 == 0 {
 				fmt.Println("\nGoing to predict")
 				pause <- struct{}{}
-				prediction := char.NewPrediction("Monsieur", runeToIdx, 50, vocabSize)
+				prediction := char.NewPrediction("Arthur", runeToIdx, 50, vocabSize)
 				model.Predict(context.TODO(), prediction)
 				for _, node := range prediction.GetComputedVectors() {
 					output := node.Value().Data().([]float32)
