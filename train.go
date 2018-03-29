@@ -104,18 +104,18 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					wg.Done()
 					return
 				}
-				//g := lstm.g.SubgraphRoots(cost, perplexity)
 				//machine := G.NewTapeMachine(g)
+				/*
+					machine := G.NewTapeMachine(lstm.g, G.BindDualValues(lstm.biasC, lstm.biasF, lstm.biasI, lstm.biasO, lstm.biasY,
+						lstm.uc, lstm.uf, lstm.ui, lstm.uo,
+						lstm.wc, lstm.wf, lstm.wi, lstm.wo, lstm.wy), G.TraceExec())
+				*/
 				machine := G.NewLispMachine(lstm.g)
 				if err := machine.RunAll(); err != nil {
 					errc <- err
 					wg.Done()
 					return
 				}
-				hiddenData := (*lstm).prevHidden.Value().Data().([]float32)
-				cellData := (*lstm).prevCell.Value().Data().([]float32)
-				hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(hiddenData))
-				cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(cellData))
 				// send infos about this execution step in a non blocking channel
 				select {
 				case infoChan <- TrainingInfos{
@@ -129,9 +129,10 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					lstm.biasC, lstm.biasF, lstm.biasI, lstm.biasO, lstm.biasY,
 					lstm.uc, lstm.uf, lstm.ui, lstm.uo,
 					lstm.wc, lstm.wf, lstm.wi, lstm.wo, lstm.wy})
-				machine.Reset() // Reset is necessary in a loop like this
-				lstm.g.UnbindAll()
-
+				hiddenData := (*lstm).prevHidden.Value().Data().([]float32)
+				cellData := (*lstm).prevCell.Value().Data().([]float32)
+				hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(hiddenData))
+				cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(cellData))
 			}
 		}
 	}()

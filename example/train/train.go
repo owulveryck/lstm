@@ -39,7 +39,7 @@ func idxToRune(i int) (rune, error) {
 
 func main() {
 	vocabSize := len([]rune(runes))
-	model := lstm.NewModel(vocabSize, vocabSize, vocabSize)
+	model := lstm.NewModel(vocabSize, vocabSize, 250)
 	learnrate := 0.001
 	l2reg := 1e-6
 	clipVal := float64(5)
@@ -50,7 +50,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 35, 1)
+		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 20, 1)
 		pause := make(chan struct{})
 		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
 		iter := 1
@@ -61,7 +61,7 @@ func main() {
 			if iter%500 == 0 {
 				fmt.Println("\nGoing to predict")
 				pause <- struct{}{}
-				prediction := char.NewPrediction("Arthur", runeToIdx, 50, vocabSize)
+				prediction := char.NewPrediction("A", runeToIdx, 50, vocabSize)
 				model.Predict(context.TODO(), prediction)
 				for _, node := range prediction.GetComputedVectors() {
 					output := node.Value().Data().([]float32)
