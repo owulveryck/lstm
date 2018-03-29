@@ -116,8 +116,8 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					m.biasC, m.biasF, m.biasI, m.biasO, m.biasY,
 					m.uc, m.uf, m.ui, m.uo,
 					m.wc, m.wf, m.wi, m.wo, m.wy})
-				// Befroe unbinding, save the value of the last hidden state and the last cell
-				// and the recreate them. They will be wiled out because they are linked in the graph and
+				// Before unbinding, save the value of the last hidden state and the last cell
+				// and the recreate them. They will be wiped out because they are linked in the graph and
 				// therefore not considerer as being "inputs"
 				hiddenValue := make([]float32, m.hiddenSize)
 				cellValue := make([]float32, m.hiddenSize)
