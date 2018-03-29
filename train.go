@@ -7,6 +7,7 @@ import (
 
 	"github.com/owulveryck/lstm/datasetter"
 	G "gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
 // the cost function
@@ -94,7 +95,10 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					return
 				}
 				g := m.g.SubgraphRoots(cost, perplexity)
-				machine := G.NewLispMachine(g)
+				//g := m.g
+				machine := G.NewTapeMachine(g, G.BindDualValues(m.biasC, m.biasF, m.biasI, m.biasO, m.biasY,
+					m.uc, m.uf, m.ui, m.uo,
+					m.wc, m.wf, m.wi, m.wo, m.wy), G.TraceExec())
 				if err := machine.RunAll(); err != nil {
 					errc <- err
 					wg.Done()
@@ -112,6 +116,19 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					m.biasC, m.biasF, m.biasI, m.biasO, m.biasY,
 					m.uc, m.uf, m.ui, m.uo,
 					m.wc, m.wf, m.wi, m.wo, m.wy})
+				// Befroe unbinding, save the value of the last hidden state and the last cell
+				// and the recreate them. They will be wiled out because they are linked in the graph and
+				// therefore not considerer as being "inputs"
+				hiddenValue := make([]float32, m.hiddenSize)
+				cellValue := make([]float32, m.hiddenSize)
+				copy(hiddenValue, m.prevHidden.Value().Data().([]float32))
+				copy(cellValue, m.prevCell.Value().Data().([]float32))
+				m.g = g
+				m.g.UnbindAllNonInputs()
+				hiddenT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(hiddenValue))
+				cellT := tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(cellValue))
+				m.prevHidden = G.NewVector(g, tensor.Float32, G.WithName("hₜ₋₁"), G.WithShape(m.hiddenSize), G.WithValue(hiddenT))
+				m.prevCell = G.NewVector(g, tensor.Float32, G.WithName("Cₜ₋₁"), G.WithShape(m.hiddenSize), G.WithValue(cellT))
 			}
 		}
 	}()

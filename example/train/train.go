@@ -39,9 +39,9 @@ func idxToRune(i int) (rune, error) {
 
 func main() {
 	vocabSize := len([]rune(runes))
-	model := lstm.NewModel(vocabSize, vocabSize, 100)
-	learnrate := 0.001
-	l2reg := 1e-6
+	model := lstm.NewModel(vocabSize, vocabSize, 500)
+	learnrate := 0.1
+	l2reg := 1e-5
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
 
@@ -50,10 +50,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 25, 3)
+		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 20, 1)
 		pause := make(chan struct{})
 		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
-		iter := 0
+		iter := 1
 		for infos := range infoChan {
 			if iter%10 == 0 {
 				fmt.Printf("%v\n", infos)
