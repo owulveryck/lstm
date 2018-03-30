@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	runes = `b«ME'àésèêüivOùquHÉa-A!ÇnJjçTByVepY,?xôXCmïW wfFU(gLNQ»R:°dPDîIktrcz.Shloâ)Gû
-`
-	filename = "../../data/tontons/input.txt"
+	runes = `;HFrch.vG
+dMgEARDKt:q$sV-Px&jzel?I!mkSyWNnB,LiaOUJfbuQwY'ZXCop3T `
+	filename = "../../data/shakespeare/input.txt"
 )
 
 var asRunes = []rune(runes)
@@ -39,9 +39,9 @@ func idxToRune(i int) (rune, error) {
 
 func main() {
 	vocabSize := len([]rune(runes))
-	model := lstm.NewModel(vocabSize, vocabSize, 500)
-	learnrate := 0.1
-	l2reg := 1e-5
+	model := lstm.NewModel(vocabSize, vocabSize, 250)
+	learnrate := 0.001
+	l2reg := 1e-6
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
 
@@ -55,20 +55,26 @@ func main() {
 		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
 		iter := 1
 		for infos := range infoChan {
-			if iter%10 == 0 {
+			if iter%100 == 0 {
 				fmt.Printf("%v\n", infos)
 			}
-			if iter%300 == 0 {
+			if iter%500 == 0 {
 				fmt.Println("\nGoing to predict")
 				pause <- struct{}{}
-				prediction := char.NewPrediction("Monsieur", runeToIdx, 10, vocabSize)
-				model.Predict(context.TODO(), prediction)
+				prediction := char.NewPrediction("A", runeToIdx, 50, vocabSize)
+				err := model.Predict(context.TODO(), prediction)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
 				for _, node := range prediction.GetComputedVectors() {
 					output := node.Value().Data().([]float32)
 					max := float32(0)
 					idx := 0
 					for i := range output {
 						if output[i] >= max {
+							max = output[i]
 							idx = i
 						}
 					}

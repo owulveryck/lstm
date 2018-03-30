@@ -24,63 +24,63 @@ func TestMarshalUnmarshal(t *testing.T) {
 
 func areEquals(a, b *Model) error {
 
-	for i := range a.wi.Value().Data().([]float32) {
-		if a.wi.Value().Data().([]float32)[i] != b.wi.Value().Data().([]float32)[i] {
+	for i := range a.wi {
+		if a.wi[i] != b.wi[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.ui.Value().Data().([]float32) {
-		if a.ui.Value().Data().([]float32)[i] != b.ui.Value().Data().([]float32)[i] {
+	for i := range a.ui {
+		if a.ui[i] != b.ui[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.biasI.Value().Data().([]float32) {
-		if a.biasI.Value().Data().([]float32)[i] != b.biasI.Value().Data().([]float32)[i] {
+	for i := range a.biasI {
+		if a.biasI[i] != b.biasI[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.wf.Value().Data().([]float32) {
-		if a.wf.Value().Data().([]float32)[i] != b.wf.Value().Data().([]float32)[i] {
+	for i := range a.wf {
+		if a.wf[i] != b.wf[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.uf.Value().Data().([]float32) {
-		if a.uf.Value().Data().([]float32)[i] != b.uf.Value().Data().([]float32)[i] {
+	for i := range a.uf {
+		if a.uf[i] != b.uf[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.biasF.Value().Data().([]float32) {
-		if a.biasF.Value().Data().([]float32)[i] != b.biasF.Value().Data().([]float32)[i] {
+	for i := range a.biasF {
+		if a.biasF[i] != b.biasF[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.wo.Value().Data().([]float32) {
-		if a.wo.Value().Data().([]float32)[i] != b.wo.Value().Data().([]float32)[i] {
+	for i := range a.wo {
+		if a.wo[i] != b.wo[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.uo.Value().Data().([]float32) {
-		if a.uo.Value().Data().([]float32)[i] != b.uo.Value().Data().([]float32)[i] {
+	for i := range a.uo {
+		if a.uo[i] != b.uo[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.biasO.Value().Data().([]float32) {
-		if a.biasO.Value().Data().([]float32)[i] != b.biasO.Value().Data().([]float32)[i] {
+	for i := range a.biasO {
+		if a.biasO[i] != b.biasO[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.wc.Value().Data().([]float32) {
-		if a.wc.Value().Data().([]float32)[i] != b.wc.Value().Data().([]float32)[i] {
+	for i := range a.wc {
+		if a.wc[i] != b.wc[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.uc.Value().Data().([]float32) {
-		if a.uc.Value().Data().([]float32)[i] != b.uc.Value().Data().([]float32)[i] {
+	for i := range a.uc {
+		if a.uc[i] != b.uc[i] {
 			return fmt.Errorf("Error")
 		}
 	}
-	for i := range a.biasC.Value().Data().([]float32) {
-		if a.biasC.Value().Data().([]float32)[i] != b.biasC.Value().Data().([]float32)[i] {
+	for i := range a.biasC {
+		if a.biasC[i] != b.biasC[i] {
 			return fmt.Errorf("Error")
 		}
 	}
