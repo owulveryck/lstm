@@ -16,10 +16,13 @@ func (m *Model) Predict(ctx context.Context, dataSet datasetter.ReadWriter) erro
 	// We need an empty memory to start...
 	prevHidden := G.NewVector(lstm.g, tensor.Float32, G.WithName("hₜ₋₁"), G.WithShape(m.hiddenSize), G.WithValue(hiddenT))
 	prevCell := G.NewVector(lstm.g, tensor.Float32, G.WithName("Cₜ₋₁"), G.WithShape(m.hiddenSize), G.WithValue(cellT))
-	_, _, err := lstm.forwardStep(dataSet, prevHidden, prevCell, 0)
+	// First pass to get update the hidden state and the cell according to the input
+	hidden, cell, err := lstm.forwardStep(dataSet, prevHidden, prevCell, 0)
 	if err != nil {
 		return err
 	}
+	// Then run this as many times as needed until a stop
+
 	//g := lstm.g.SubgraphRoots(dataSet.GetComputedVectors()...)
 	//machine := G.NewTapeMachine(g, G.ExecuteFwdOnly())
 	machine := G.NewLispMachine(lstm.g, G.ExecuteFwdOnly())
