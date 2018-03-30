@@ -20,9 +20,9 @@ func (m *Model) Predict(ctx context.Context, dataSet datasetter.ReadWriter) erro
 	if err != nil {
 		return err
 	}
-	g := lstm.g.SubgraphRoots(dataSet.GetComputedVectors()...)
+	//g := lstm.g.SubgraphRoots(dataSet.GetComputedVectors()...)
 	//machine := G.NewTapeMachine(g, G.ExecuteFwdOnly())
-	machine := G.NewTapeMachine(g)
+	machine := G.NewLispMachine(lstm.g, G.ExecuteFwdOnly())
 	err = machine.RunAll()
 	return err
 

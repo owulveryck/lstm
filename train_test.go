@@ -3,6 +3,7 @@ package lstm
 import (
 	"context"
 	"io"
+	"log"
 	"testing"
 
 	G "gorgonia.org/gorgonia"
@@ -27,8 +28,7 @@ func TestCost(t *testing.T) {
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
 	var hiddenT, cellT tensor.Tensor
-	for i := 0; i < 1; i++ {
-		t.Log("Running")
+	for i := 0; i < 500; i++ {
 		if hiddenT == nil {
 			hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
 		}
@@ -36,36 +36,24 @@ func TestCost(t *testing.T) {
 			cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
 		}
 		l := model.newLSTM(hiddenT, cellT)
-		//cost, perplexity, err := l.cost(tset)
 		_, _, err := l.cost(tset)
 		if err != nil {
 			t.Fatal(err)
 		}
-		//g := l.g.SubgraphRoots(cost, perplexity)
-		machine := G.NewTapeMachine(l.g)
+		machine := G.NewLispMachine(l.g)
 		if err := machine.RunAll(); err != nil {
 			t.Fatal(err)
 		}
+		solver.Step(G.Nodes{l.biasC, l.biasF, l.biasI, l.biasO, l.biasY,
+			l.uc, l.uf, l.ui, l.uo,
+			l.wc, l.wf, l.wi, l.wo, l.wy})
 		hiddenData := (*l).prevHidden.Value().Data().([]float32)
 		cellData := (*l).prevCell.Value().Data().([]float32)
 		hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize), tensor.WithBacking(hiddenData))
 		cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize), tensor.WithBacking(cellData))
-		solver.Step(G.Nodes{
-			l.biasC,
-			l.biasF,
-			l.biasI,
-			l.biasO,
-			l.biasY,
-			l.uc,
-			l.uf,
-			l.ui,
-			l.uo,
-			l.wc,
-			l.wf,
-			l.wi,
-			l.wo,
-			l.wy})
-		l.g.UnbindAll()
+		tset.flush()
+		log.Println(tset.outputValues)
+		//l.g.UnbindAllNonInputs()
 	}
 	getMax := func(a []float32) int {
 		max := float32(0)
@@ -78,10 +66,10 @@ func TestCost(t *testing.T) {
 		}
 		return idx
 	}
-	for i, computedVector := range tset.GetComputedVectors() {
-		val := getMax(computedVector.Value().Data().([]float32))
+	for i, computedValue := range tset.outputValues {
+		val := getMax(computedValue)
 		if tset.expectedValues[i] != val {
-			t.Log(computedVector.Value().Data().([]float32))
+			t.Log(computedValue)
 			t.Fatal("Bad result")
 		}
 

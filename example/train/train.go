@@ -62,7 +62,12 @@ func main() {
 				fmt.Println("\nGoing to predict")
 				pause <- struct{}{}
 				prediction := char.NewPrediction("A", runeToIdx, 50, vocabSize)
-				model.Predict(context.TODO(), prediction)
+				err := model.Predict(context.TODO(), prediction)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
 				for _, node := range prediction.GetComputedVectors() {
 					output := node.Value().Data().([]float32)
 					max := float32(0)

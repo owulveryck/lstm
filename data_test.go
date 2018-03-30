@@ -67,6 +67,7 @@ type testSet struct {
 	expectedValues []int
 	offset         int
 	output         G.Nodes
+	outputValues   [][]float32
 	epoch          int
 	maxEpoch       int
 }
@@ -80,6 +81,14 @@ func (t *testSet) ReadInputVector(g *G.ExprGraph) (*G.Node, error) {
 	node := G.NewVector(g, tensor.Float32, G.WithName(fmt.Sprintf("input_%v", t.offset)), G.WithShape(size), G.WithValue(inputTensor))
 	t.offset++
 	return node, nil
+}
+
+func (t *testSet) flush() error {
+	t.outputValues = make([][]float32, len(t.output))
+	for i, node := range t.output {
+		t.outputValues[i] = node.Value().Data().([]float32)
+	}
+	return nil
 }
 
 func (t *testSet) WriteComputedVector(n *G.Node) error {
