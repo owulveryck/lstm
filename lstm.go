@@ -24,7 +24,7 @@ func (l *lstm) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell *
 	// this is to avoid conflict in the graph due to the recursion
 	r := replace(`ₜ`, step)
 	set := func(ident, equation string) *G.Node {
-		//log.Printf("%v=%v", r.Replace(ident), r.Replace(equation))
+		//log.Printf("==> %v=%v", r.Replace(ident), r.Replace(equation))
 		res, _ := l.parser.Parse(r.Replace(equation))
 		l.parser.Set(r.Replace(ident), res)
 		return res
@@ -34,18 +34,24 @@ func (l *lstm) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell *
 	if step == 0 {
 		l.parser.Set(r.Replace(`hₜ₋₁`), prevHidden)
 		l.parser.Set(r.Replace(`cₜ₋₁`), prevCell)
+
 	}
 	set(`iₜ`, `σ(Wᵢ·xₜ+Uᵢ·hₜ₋₁+Bᵢ)`)
 	set(`fₜ`, `σ(Wf·xₜ+Uf·hₜ₋₁+Bf)`) // dot product made with ctrl+k . M
 	set(`oₜ`, `σ(Wₒ·xₜ+Uₒ·hₜ₋₁+Bₒ)`)
 	// ċₜis a vector of new candidates value
 	set(`ĉₜ`, `tanh(Wc·xₜ+Uc·hₜ₋₁+Bc)`) // c made with ctrl+k c >
-	ct := set(`cₜ`, `fₜ*cₜ₋₁+iₜ*ĉₜ`)
+	ct := set(`cₜ`, `(fₜ*cₜ₋₁)+(iₜ*ĉₜ)`)
 	ht := set(`hₜ`, `oₜ*tanh(cₜ)`)
-	y, _ := l.parser.Parse(r.Replace(`Wy·hₜ+By`))
-	// Apply the softmax function to the output vector
-	prob := G.Must(G.SoftMax(y))
+	y := set(`yₜ`, `softmax(Wy·hₜ+By)`)
 
-	dataSet.WriteComputedVector(prob)
+	//y, _ := l.parser.Parse(r.Replace(`Wy·hₜ+By`))
+	// Apply the softmax function to the output vector
+	//prob := G.Must(G.SoftMax(y))
+	//l.outputs = append(l.outputs, prob)
+	l.outputs = append(l.outputs, y)
+
+	//dataSet.WriteComputedVector(prob)
+	dataSet.WriteComputedVector(y)
 	return l.forwardStep(dataSet, ht, ct, step+1)
 }
