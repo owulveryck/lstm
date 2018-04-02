@@ -12,6 +12,11 @@ import (
 func TestCost(t *testing.T) {
 	hiddenSize := 10
 	model := newModelFromBackends(testBackends(5, 5, hiddenSize))
+	learnrate := 0.1
+	l2reg := 1e-6
+	clipVal := float64(5)
+	var hiddenT, cellT tensor.Tensor
+	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
 	tset := &testSet{
 		values: [][]float32{
 			{1, 0, 0, 0, 0},
@@ -22,12 +27,17 @@ func TestCost(t *testing.T) {
 		},
 		expectedValues: []int{1, 2, 3, 4, 0},
 	}
-	learnrate := 0.1
-	l2reg := 1e-6
-	clipVal := float64(5)
-	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
-	var hiddenT, cellT tensor.Tensor
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 20; i++ {
+		tset := &testSet{
+			values: [][]float32{
+				{1, 0, 0, 0, 0},
+				{0, 1, 0, 0, 0},
+				{0, 0, 1, 0, 0},
+				{0, 0, 0, 1, 0},
+				{0, 0, 0, 0, 1},
+			},
+			expectedValues: []int{1, 2, 3, 4, 0},
+		}
 		if hiddenT == nil {
 			hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
 		}
@@ -35,21 +45,33 @@ func TestCost(t *testing.T) {
 			cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize))
 		}
 		l := model.newLSTM(hiddenT, cellT)
-		_, _, err := l.cost(tset)
+		_, _, hidden, cell, err := l.cost(tset)
 		if err != nil {
 			t.Fatal(err)
 		}
 		machine := G.NewLispMachine(l.g)
 		if err := machine.RunAll(); err != nil {
-			t.Fatal(err)
+			t.Fatalf("Pass: %v, error: %v", i, err)
 		}
 		solver.Step(G.Nodes{l.biasC, l.biasF, l.biasI, l.biasO, l.biasY,
 			l.uc, l.uf, l.ui, l.uo,
 			l.wc, l.wf, l.wi, l.wo, l.wy})
-		hiddenData := (*l).prevHidden.Value().Data().([]float32)
-		cellData := (*l).prevCell.Value().Data().([]float32)
-		hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize), tensor.WithBacking(hiddenData))
-		cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(hiddenSize), tensor.WithBacking(cellData))
+		copy(model.biasC, l.biasC.Value().Data().([]float32))
+		copy(model.biasF, l.biasC.Value().Data().([]float32))
+		copy(model.biasI, l.biasC.Value().Data().([]float32))
+		copy(model.biasO, l.biasC.Value().Data().([]float32))
+		copy(model.biasY, l.biasC.Value().Data().([]float32))
+		copy(model.wc, l.biasC.Value().Data().([]float32))
+		copy(model.wf, l.biasC.Value().Data().([]float32))
+		copy(model.wi, l.biasC.Value().Data().([]float32))
+		copy(model.wo, l.biasC.Value().Data().([]float32))
+		copy(model.wy, l.biasC.Value().Data().([]float32))
+		copy(model.uc, l.biasC.Value().Data().([]float32))
+		copy(model.uf, l.biasC.Value().Data().([]float32))
+		copy(model.ui, l.biasC.Value().Data().([]float32))
+		copy(model.uo, l.biasC.Value().Data().([]float32))
+		copy(hiddenT.Data().([]float32), hidden.Value().Data().([]float32))
+		copy(cellT.Data().([]float32), cell.Value().Data().([]float32))
 		tset.flush()
 		//l.g.UnbindAllNonInputs()
 	}

@@ -107,6 +107,8 @@ func (t *testSet) GetExpectedValue(offset int) (int, error) {
 func (t *testSet) GetTrainer() (datasetter.Trainer, error) {
 	if t.epoch <= t.maxEpoch {
 		t.epoch++
+		t.offset = 0
+		t.output = make([]*G.Node, 0)
 		return t, nil
 	}
 	return nil, io.EOF

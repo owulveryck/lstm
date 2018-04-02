@@ -25,7 +25,8 @@ func TestForwardStep(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine := G.NewLispMachine(lstm.g, G.ExecuteFwdOnly())
+	machine := G.NewTapeMachine(lstm.g)
+	//	machine := G.NewLispMachine(lstm.g, G.ExecuteFwdOnly())
 	if err := machine.RunAll(); err != nil {
 		t.Fatal(err)
 	}
