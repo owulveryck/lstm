@@ -22,3 +22,19 @@ type Trainer interface {
 type FullTrainer interface {
 	GetTrainer() (Trainer, error)
 }
+
+// Float32Reader a []float32
+type Float32Reader interface {
+	Read() ([]float32, error)
+}
+
+// Float32Writer writes an array of float 32
+type Float32Writer interface {
+	Write([]float32) error
+}
+
+// Float32ReadWriter ...
+type Float32ReadWriter interface {
+	Float32Reader
+	Float32Writer
+}
