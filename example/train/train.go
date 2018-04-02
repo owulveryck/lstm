@@ -57,24 +57,21 @@ func main() {
 		for infos := range infoChan {
 			if iter%100 == 0 {
 				fmt.Printf("%v\n", infos)
-			}
-			if iter%500 == 0 {
+				//}
+				//if iter%500 == 0 {
 				fmt.Println("\nGoing to predict")
 				pause <- struct{}{}
-				prediction := char.NewPrediction("A", runeToIdx, 50, vocabSize)
+				prediction := char.NewPrediction("Hello,", runeToIdx, 10, vocabSize)
 				err := model.Predict(context.TODO(), prediction)
 				if err != nil {
 					log.Println(err)
 					continue
 				}
 
-				for _, node := range prediction.GetComputedVectors() {
-					output := node.Value().Data().([]float32)
-					max := float32(0)
-					idx := 0
-					for i := range output {
-						if output[i] >= max {
-							max = output[i]
+				for _, output := range prediction.GetOutput() {
+					var idx int
+					for i, val := range output {
+						if val == 1 {
 							idx = i
 						}
 					}
