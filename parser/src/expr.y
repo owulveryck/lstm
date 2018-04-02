@@ -24,7 +24,7 @@ import (
 
 %type	<node>	expr expr1 expr2 expr3 function
 
-%token '+' '·' '-' '*' '/' '(' ')' '=' 'σ' tanh
+%token '+' '·' '-' '*' '/' '(' ')' '=' 'σ' tanh softmax
 
 %token	<node>	NODE
 
@@ -90,6 +90,10 @@ function:
 |     tanh expr3
       {
                 $$ = G.Must(G.Tanh($2))
+      }
+|     softmax expr3
+      {
+                $$ = G.Must(G.SoftMax($2))
       }
 
 %%
@@ -169,6 +173,8 @@ func (x *exprLex) ident(c rune, yylval *gorgoniaSymType) int {
         switch b.String() {
         case "tanh":
               return tanh
+        case "softmax":
+              return softmax
         default:
 
           // OWK Here we analyse the dictionnary

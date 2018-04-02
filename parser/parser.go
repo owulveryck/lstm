@@ -18,6 +18,10 @@ func NewParser(g *G.ExprGraph) *Parser {
 	}
 }
 
+func (p *Parser) Get(ident string) *G.Node {
+	return p.dico[ident]
+}
+
 // Set a value to the ident
 func (p *Parser) Set(ident string, value *G.Node) {
 	p.dico[ident] = value

@@ -7,11 +7,10 @@ import __yyfmt__ "fmt"
 import (
 	"bytes"
 	"fmt"
+	G "gorgonia.org/gorgonia"
 	"log"
 	"math/big"
 	"unicode/utf8"
-
-	G "gorgonia.org/gorgonia"
 )
 
 //line expr.y:21
@@ -21,7 +20,8 @@ type gorgoniaSymType struct {
 }
 
 const tanh = 57346
-const NODE = 57347
+const softmax = 57347
+const NODE = 57348
 
 var gorgoniaToknames = [...]string{
 	"$end",
@@ -37,6 +37,7 @@ var gorgoniaToknames = [...]string{
 	"'='",
 	"'σ'",
 	"tanh",
+	"softmax",
 	"NODE",
 }
 var gorgoniaStatenames = [...]string{}
@@ -45,7 +46,7 @@ const gorgoniaEofCode = 1
 const gorgoniaErrCode = 2
 const gorgoniaInitialStackSize = 16
 
-//line expr.y:95
+//line expr.y:99
 
 // The parser expects the lexer to return 0 on EOF.  Give it a name
 // for clarity.
@@ -123,13 +124,15 @@ L:
 	switch b.String() {
 	case "tanh":
 		return tanh
+	case "softmax":
+		return softmax
 	default:
 
-		// OWK Here we analyse the dictionary
+		// OWK Here we analyse the dictionnary
 		yylval.node = &G.Node{}
 		val, ok := x.dico[b.String()]
 		if !ok {
-			x.Error("Value does not exist in the dictionary: " + b.String())
+			x.Error("Value does not exist in the dictionnary: " + b.String())
 			return eof
 		}
 		yylval.node = val
@@ -209,46 +212,49 @@ var gorgoniaExca = [...]int{
 
 const gorgoniaPrivate = 57344
 
-const gorgoniaLast = 33
+const gorgoniaLast = 40
 
 var gorgoniaAct = [...]int{
 
-	7, 4, 6, 5, 28, 17, 9, 18, 19, 11,
-	12, 8, 21, 22, 1, 10, 23, 24, 25, 26,
-	27, 9, 2, 3, 11, 12, 8, 15, 16, 13,
-	0, 14, 20,
+	7, 9, 6, 30, 11, 12, 13, 8, 18, 1,
+	19, 20, 22, 23, 24, 10, 3, 25, 26, 27,
+	28, 29, 4, 14, 5, 15, 0, 9, 0, 2,
+	11, 12, 13, 8, 16, 17, 0, 0, 0, 21,
 }
 var gorgoniaPact = [...]int{
 
-	-3, -1000, -1000, 25, -3, -3, 0, -1000, -1000, -3,
-	-1000, 12, 12, 12, 12, -1000, -1000, 12, 12, 12,
-	-6, -1000, -1000, 0, 0, -1000, -1000, -1000, -1000,
+	18, -1000, -1000, 19, 18, 18, 3, -1000, -1000, 18,
+	-1000, -8, -8, -8, -8, -8, -1000, -1000, -8, -8,
+	-8, -7, -1000, -1000, -1000, 3, 3, -1000, -1000, -1000,
+	-1000,
 }
 var gorgoniaPgo = [...]int{
 
-	0, 22, 23, 2, 0, 15, 14,
+	0, 29, 16, 2, 0, 15, 9,
 }
 var gorgoniaR1 = [...]int{
 
 	0, 6, 1, 1, 1, 2, 2, 2, 3, 3,
-	3, 3, 4, 4, 4, 5, 5,
+	3, 3, 4, 4, 4, 5, 5, 5,
 }
 var gorgoniaR2 = [...]int{
 
 	0, 1, 1, 2, 2, 1, 3, 3, 1, 3,
-	3, 3, 1, 3, 1, 2, 2,
+	3, 3, 1, 3, 1, 2, 2, 2,
 }
 var gorgoniaChk = [...]int{
 
-	-1000, -6, -1, -2, 4, 6, -3, -4, 14, 9,
-	-5, 12, 13, 4, 6, -1, -1, 5, 7, 8,
-	-1, -4, -4, -3, -3, -4, -4, -4, 10,
+	-1000, -6, -1, -2, 4, 6, -3, -4, 15, 9,
+	-5, 12, 13, 14, 4, 6, -1, -1, 5, 7,
+	8, -1, -4, -4, -4, -3, -3, -4, -4, -4,
+	10,
 }
 var gorgoniaDef = [...]int{
 
 	0, -2, 1, 2, 0, 0, 5, 8, 12, 0,
-	14, 0, 0, 0, 0, 3, 4, 0, 0, 0,
-	0, 15, 16, 6, 7, 9, 10, 11, 13,
+	14, 0, 0, 0, 0, 0, 3, 4, 0, 0,
+	0, 0, 15, 16, 17, 6, 7, 9, 10, 11,
+	13,
 }
 var gorgoniaTok1 = [...]int{
 
@@ -274,7 +280,7 @@ var gorgoniaTok1 = [...]int{
 }
 var gorgoniaTok2 = [...]int{
 
-	2, 3, 13, 14,
+	2, 3, 13, 14, 15,
 }
 var gorgoniaTok3 = [...]int{
 	963, 12, 0,
@@ -683,6 +689,12 @@ gorgoniadefault:
 		//line expr.y:91
 		{
 			gorgoniaVAL.node = G.Must(G.Tanh(gorgoniaDollar[2].node))
+		}
+	case 17:
+		gorgoniaDollar = gorgoniaS[gorgoniapt-2 : gorgoniapt+1]
+		//line expr.y:95
+		{
+			gorgoniaVAL.node = G.Must(G.SoftMax(gorgoniaDollar[2].node))
 		}
 	}
 	goto gorgoniastack /* stack new state and value */
