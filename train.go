@@ -11,17 +11,17 @@ import (
 )
 
 // the cost function
-func (l *lstm) cost(dataSet datasetter.Trainer) (cost, perplexity *G.Node, err error) {
-	hidden, cell, err := l.forwardStep(dataSet, l.prevHidden, l.prevCell, 0)
+func (l *lstm) cost(dataSet datasetter.Trainer) (cost, perplexity, hidden, cell *G.Node, err error) {
+	hidden, cell, err = l.forwardStep(dataSet, l.prevHidden, l.prevCell, 0)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	var loss, perp *G.Node
 	// Evaluate the cost
 	for i, computedVector := range dataSet.GetComputedVectors() {
 		expectedValue, err := dataSet.GetExpectedValue(i)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		logprob := G.Must(G.Neg(G.Must(G.Log(computedVector))))
 		loss = G.Must(G.Slice(logprob, G.S(expectedValue)))
@@ -41,10 +41,10 @@ func (l *lstm) cost(dataSet datasetter.Trainer) (cost, perplexity *G.Node, err e
 			perplexity = G.Must(G.Add(perplexity, perp))
 		}
 	}
-	l.prevHidden = hidden
-	l.prevCell = cell
-	g := l.g.SubgraphRoots(cost, perplexity)
-	l.g = g
+	//l.prevHidden = hidden
+	//l.prevCell = cell
+	//g := l.g.SubgraphRoots(cost, perplexity)
+	//l.g = g
 	return
 }
 
@@ -98,7 +98,7 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					wg.Done()
 					return
 				}
-				cost, perplexity, err := lstm.cost(trainer)
+				cost, perplexity, hidden, cell, err := lstm.cost(trainer)
 				if err != nil {
 					errc <- err
 					wg.Done()
@@ -123,10 +123,23 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 					lstm.biasC, lstm.biasF, lstm.biasI, lstm.biasO, lstm.biasY,
 					lstm.uc, lstm.uf, lstm.ui, lstm.uo,
 					lstm.wc, lstm.wf, lstm.wi, lstm.wo, lstm.wy})
-				hiddenData := (*lstm).prevHidden.Value().Data().([]float32)
-				cellData := (*lstm).prevCell.Value().Data().([]float32)
-				hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(hiddenData))
-				cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize), tensor.WithBacking(cellData))
+				copy(m.biasC, lstm.biasC.Value().Data().([]float32))
+				copy(m.biasF, lstm.biasC.Value().Data().([]float32))
+				copy(m.biasI, lstm.biasC.Value().Data().([]float32))
+				copy(m.biasO, lstm.biasC.Value().Data().([]float32))
+				copy(m.biasY, lstm.biasC.Value().Data().([]float32))
+				copy(m.wc, lstm.biasC.Value().Data().([]float32))
+				copy(m.wf, lstm.biasC.Value().Data().([]float32))
+				copy(m.wi, lstm.biasC.Value().Data().([]float32))
+				copy(m.wo, lstm.biasC.Value().Data().([]float32))
+				copy(m.wy, lstm.biasC.Value().Data().([]float32))
+				copy(m.uc, lstm.biasC.Value().Data().([]float32))
+				copy(m.uf, lstm.biasC.Value().Data().([]float32))
+				copy(m.ui, lstm.biasC.Value().Data().([]float32))
+				copy(m.uo, lstm.biasC.Value().Data().([]float32))
+
+				copy(hiddenT.Data().([]float32), hidden.Value().Data().([]float32))
+				copy(cellT.Data().([]float32), cell.Value().Data().([]float32))
 			}
 		}
 	}()
