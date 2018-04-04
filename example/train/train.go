@@ -39,8 +39,8 @@ func idxToRune(i int) (rune, error) {
 
 func main() {
 	vocabSize := len([]rune(runes))
-	model := lstm.NewModel(vocabSize, vocabSize, 250)
-	learnrate := 0.001
+	model := lstm.NewModel(vocabSize, vocabSize, 100)
+	learnrate := 1e-3
 	l2reg := 1e-6
 	clipVal := float64(5)
 	solver := G.NewRMSPropSolver(G.WithLearnRate(learnrate), G.WithL2Reg(l2reg), G.WithClip(clipVal))
@@ -50,18 +50,18 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 20, 1)
+		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 25, 1)
 		pause := make(chan struct{})
 		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
 		iter := 1
 		for infos := range infoChan {
 			if iter%100 == 0 {
 				fmt.Printf("%v\n", infos)
-				//}
-				//if iter%500 == 0 {
+			}
+			if iter%500 == 0 {
 				fmt.Println("\nGoing to predict")
 				pause <- struct{}{}
-				prediction := char.NewPrediction("Hello,", runeToIdx, 10, vocabSize)
+				prediction := char.NewPrediction("Hello, ", runeToIdx, 500, vocabSize)
 				err := model.Predict(context.TODO(), prediction)
 				if err != nil {
 					log.Println(err)
@@ -81,6 +81,7 @@ func main() {
 					}
 					fmt.Printf(string(rne))
 				}
+				fmt.Println("")
 				pause <- struct{}{}
 			}
 			iter++
