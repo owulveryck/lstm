@@ -58,7 +58,7 @@ func (m *Model) Predict(ctx context.Context, dataSet datasetter.Float32ReadWrite
 	}
 	//g := lstm.g.SubgraphRoots(dataSet.GetComputedVectors()...)
 	//machine := G.NewTapeMachine(g, G.ExecuteFwdOnly())
-	machine := G.NewLispMachine(lstm.g, G.ExecuteFwdOnly())
+	machine := G.NewTapeMachine(lstm.g)
 	for {
 		inputValue, err := dataSet.Read()
 		copy(input.Value().Data().([]float32), inputValue)
@@ -78,5 +78,4 @@ func (m *Model) Predict(ctx context.Context, dataSet datasetter.Float32ReadWrite
 		copy(prevCell.Value().Data().([]float32), cell.Value().Data().([]float32))
 	}
 	return nil
-
 }
