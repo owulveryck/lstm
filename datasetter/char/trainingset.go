@@ -49,7 +49,7 @@ func NewTrainingSet(rs io.ReadSeeker, runeToIdx func(r rune) (int, error), vocab
 // ReadInputVector returns the input vector until it reach the penultimate rune
 // the ultimate rune is not used as input within the current section as an input
 func (s *Section) ReadInputVector(g *G.ExprGraph) (*G.Node, error) {
-	if s.offset == len(s.sentence) {
+	if s.offset == len(s.sentence)-1 {
 		return nil, io.EOF
 	}
 	backend := make([]float32, s.vocabSize)
@@ -73,7 +73,7 @@ func (s *Section) GetComputedVectors() G.Nodes {
 
 // GetExpectedValue returns the encoded value of the rune next to the one present at offset
 func (s *Section) GetExpectedValue(offset int) (int, error) {
-	return s.sentence[offset], nil
+	return s.sentence[offset+1], nil
 }
 
 // GetTrainer returns a pointer so a Section. It reads batchSize runes
