@@ -45,12 +45,6 @@ func (l *lstm) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell *
 	ht := set(`hₜ`, `oₜ*tanh(cₜ)`)
 	y := set(`yₜ`, `softmax(Wy·hₜ+By)`)
 
-	//y, _ := l.parser.Parse(r.Replace(`Wy·hₜ+By`))
-	// Apply the softmax function to the output vector
-	//prob := G.Must(G.SoftMax(y))
-	//l.outputs = append(l.outputs, prob)
-
-	//dataSet.WriteComputedVector(prob)
 	dataSet.WriteComputedVector(y)
 	return l.forwardStep(dataSet, ht, ct, step+1)
 }
