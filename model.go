@@ -62,7 +62,6 @@ type lstm struct {
 	//inputVector *G.Node
 	prevHidden *G.Node
 	prevCell   *G.Node
-	outputs    G.Nodes
 }
 
 func (m *Model) newLSTM(hiddenT, cellT tensor.Tensor) *lstm {
@@ -70,7 +69,6 @@ func (m *Model) newLSTM(hiddenT, cellT tensor.Tensor) *lstm {
 	g := G.NewGraph()
 	lstm.g = g
 	p := parser.NewParser(g)
-	lstm.outputs = make(G.Nodes, 0)
 	lstm.parser = p
 	lstm.hiddenSize = m.hiddenSize
 	lstm.inputSize = m.inputSize

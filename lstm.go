@@ -49,7 +49,6 @@ func (l *lstm) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell *
 	// Apply the softmax function to the output vector
 	//prob := G.Must(G.SoftMax(y))
 	//l.outputs = append(l.outputs, prob)
-	l.outputs = append(l.outputs, y)
 
 	//dataSet.WriteComputedVector(prob)
 	dataSet.WriteComputedVector(y)
