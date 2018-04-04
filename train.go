@@ -119,27 +119,12 @@ func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G
 				}:
 				default:
 				}
+				copy(hiddenT.Data().([]float32), hidden.Value().Data().([]float32))
+				copy(cellT.Data().([]float32), cell.Value().Data().([]float32))
 				solver.Step(G.Nodes{
 					lstm.biasC, lstm.biasF, lstm.biasI, lstm.biasO, lstm.biasY,
 					lstm.uc, lstm.uf, lstm.ui, lstm.uo,
 					lstm.wc, lstm.wf, lstm.wi, lstm.wo, lstm.wy})
-				copy(m.biasC, lstm.biasC.Value().Data().([]float32))
-				copy(m.biasF, lstm.biasC.Value().Data().([]float32))
-				copy(m.biasI, lstm.biasC.Value().Data().([]float32))
-				copy(m.biasO, lstm.biasC.Value().Data().([]float32))
-				copy(m.biasY, lstm.biasC.Value().Data().([]float32))
-				copy(m.wc, lstm.biasC.Value().Data().([]float32))
-				copy(m.wf, lstm.biasC.Value().Data().([]float32))
-				copy(m.wi, lstm.biasC.Value().Data().([]float32))
-				copy(m.wo, lstm.biasC.Value().Data().([]float32))
-				copy(m.wy, lstm.biasC.Value().Data().([]float32))
-				copy(m.uc, lstm.biasC.Value().Data().([]float32))
-				copy(m.uf, lstm.biasC.Value().Data().([]float32))
-				copy(m.ui, lstm.biasC.Value().Data().([]float32))
-				copy(m.uo, lstm.biasC.Value().Data().([]float32))
-
-				copy(hiddenT.Data().([]float32), hidden.Value().Data().([]float32))
-				copy(cellT.Data().([]float32), cell.Value().Data().([]float32))
 			}
 		}
 	}()
