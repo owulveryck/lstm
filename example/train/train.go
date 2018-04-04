@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -12,33 +13,60 @@ import (
 	G "gorgonia.org/gorgonia"
 )
 
-const (
-	runes = `;HFrch.vG
-dMgEARDKt:q$sV-Px&jzel?I!mkSyWNnB,LiaOUJfbuQwY'ZXCop3T `
-	filename = "../../data/shakespeare/input.txt"
-)
+func newVocabulary(filename string) (vocabulary, error) {
+	vocab := make(map[rune]struct{}, 0)
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	r := bufio.NewReader(f)
+	for {
+		if c, _, err := r.ReadRune(); err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Fatal(err)
+		} else {
+			vocab[c] = struct{}{}
+		}
+	}
+	output := make([]rune, len(vocab))
+	i := 0
+	for rne := range vocab {
+		output[i] = rne
+		i++
+	}
+	return output, nil
 
-var asRunes = []rune(runes)
+}
 
-func runeToIdx(r rune) (int, error) {
-	for i := range asRunes {
-		if asRunes[i] == r {
+type vocabulary []rune
+
+func (v vocabulary) runeToIdx(r rune) (int, error) {
+	for i := range v {
+		if v[i] == r {
 			return i, nil
 		}
 	}
 	return 0, fmt.Errorf("Rune %v is not part of the vocabulary", string(r))
 }
 
-func idxToRune(i int) (rune, error) {
+func (v vocabulary) idxToRune(i int) (rune, error) {
 	var rn rune
-	if i >= len([]rune(runes)) {
+	if i >= len(v) {
 		return rn, fmt.Errorf("index invalid, no rune references")
 	}
-	return []rune(runes)[i], nil
+	return v[i], nil
 }
 
 func main() {
-	vocabSize := len([]rune(runes))
+	filename := os.Args[1]
+	vocab, err := newVocabulary(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	vocabSize := len(vocab)
 	model := lstm.NewModel(vocabSize, vocabSize, 100)
 	learnrate := 1e-3
 	l2reg := 1e-6
@@ -50,18 +78,21 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tset := char.NewTrainingSet(f, runeToIdx, vocabSize, 25, 1)
+		max, _ := f.Seek(0, io.SeekEnd)
+		f.Seek(0, io.SeekStart)
+		tset := char.NewTrainingSet(f, vocab.runeToIdx, vocabSize, 25, 1)
 		pause := make(chan struct{})
 		infoChan, errc := model.Train(context.TODO(), tset, solver, pause)
 		iter := 1
 		for infos := range infoChan {
 			if iter%100 == 0 {
-				fmt.Printf("%v\n", infos)
+				here, _ := f.Seek(0, io.SeekCurrent)
+				fmt.Printf("[%v/%v]%v\n", here, max, infos)
 			}
 			if iter%500 == 0 {
 				fmt.Println("\nGoing to predict")
 				pause <- struct{}{}
-				prediction := char.NewPrediction("Hello, ", runeToIdx, 500, vocabSize)
+				prediction := char.NewPrediction("Hello, ", vocab.runeToIdx, 500, vocabSize)
 				err := model.Predict(context.TODO(), prediction)
 				if err != nil {
 					log.Println(err)
@@ -75,7 +106,7 @@ func main() {
 							idx = i
 						}
 					}
-					rne, err := idxToRune(idx)
+					rne, err := vocab.idxToRune(idx)
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -89,7 +120,7 @@ func main() {
 		err = <-errc
 		if err == io.EOF {
 			close(pause)
-			return
+			//return
 		}
 		if err != nil && err != io.EOF {
 			log.Fatal(err)
