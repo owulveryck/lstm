@@ -92,7 +92,7 @@ func main() {
 			if iter%500 == 0 {
 				fmt.Println("\nGoing to predict")
 				pause <- struct{}{}
-				prediction := char.NewPrediction("Hello, ", vocab.runeToIdx, 500, vocabSize)
+				prediction := char.NewPrediction("B", vocab.runeToIdx, 500, vocabSize)
 				err := model.Predict(context.TODO(), prediction)
 				if err != nil {
 					log.Println(err)
