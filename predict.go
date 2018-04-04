@@ -12,10 +12,9 @@ import (
 // basicReadWriter is a dummy structure that fufil the datasetter.ReadWriter interface
 // Is it used to build a one step execution graph
 type basicReadWriter struct {
-	input   *G.Node
-	step    int
-	outputs G.Nodes
-	output  *G.Node
+	input  *G.Node
+	step   int
+	output *G.Node
 }
 
 func (b *basicReadWriter) ReadInputVector(g *G.ExprGraph) (*G.Node, error) {
@@ -73,7 +72,8 @@ func (m *Model) Predict(ctx context.Context, dataSet datasetter.Float32ReadWrite
 		if err != nil {
 			return err
 		}
-		dataSet.Write(lstm.outputs[0].Value().Data().([]float32))
+		machine.Reset()
+		dataSet.Write(dummySet.output.Value().Data().([]float32))
 		copy(prevHidden.Value().Data().([]float32), hidden.Value().Data().([]float32))
 		copy(prevCell.Value().Data().([]float32), cell.Value().Data().([]float32))
 	}
