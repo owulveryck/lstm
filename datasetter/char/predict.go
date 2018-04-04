@@ -3,7 +3,6 @@ package char
 import (
 	"bytes"
 	"io"
-	"log"
 )
 
 // Prediction is the based type that can be used as a training dataset
@@ -35,14 +34,12 @@ func (p *Prediction) Read() ([]float32, error) {
 	}
 	if err == io.EOF && p.generated < p.sampleSize {
 		p.generated++
-		log.Println("Reading ", len(p.output)-1)
 		return p.output[len(p.output)-1], nil
 	}
 	if p.generated >= p.sampleSize {
 		return nil, io.EOF
 	}
 	backend := make([]float32, p.vocabSize)
-	log.Println("Reading", rn)
 	idx, err := p.runeToIdx(rn)
 	if err != nil {
 		return nil, err
@@ -61,7 +58,6 @@ func (p *Prediction) Write(val []float32) error {
 			idx = i
 		}
 	}
-	log.Println("Writing index", idx)
 	output := make([]float32, len(val))
 	output[idx] = 1
 	p.output = append(p.output, output)
