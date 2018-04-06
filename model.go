@@ -1,8 +1,8 @@
 package lstm
 
 import (
-	"github.com/owulveryck/lstm/parser"
 	G "gorgonia.org/gorgonia"
+	"gorgonia.org/parser"
 	"gorgonia.org/tensor"
 )
 
