@@ -1,136 +1,81 @@
-package lstm
+package main
 
 import (
 	"context"
-	"errors"
-	"sync"
-
-	"github.com/owulveryck/lstm/datasetter"
-	G "gorgonia.org/gorgonia"
-	"gorgonia.org/tensor"
+	"io"
 )
 
-// the cost function
-func (l *lstm) cost(dataSet datasetter.Trainer) (cost, perplexity, hidden, cell *G.Node, err error) {
-	hidden, cell, err = l.forwardStep(dataSet, l.prevHidden, l.prevCell, 0)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	var loss, perp *G.Node
-	// Evaluate the cost
-	for i, computedVector := range dataSet.GetComputedVectors() {
-		expectedValue, err := dataSet.GetExpectedValue(i)
+func train(ctx context.Context, network *lstm, r io.ReadSeeker, total int) {
+	/*
+		maxEpoch := 1
+		//miniBatchSize := 10
+		var err error
+		//y, err := gorgonia.StableSoftMax(network.Ht)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			log.Fatal(err)
 		}
-		logprob := G.Must(G.Neg(G.Must(G.Log(computedVector))))
-		loss = G.Must(G.Slice(logprob, G.S(expectedValue)))
-		log2prob := G.Must(G.Neg(G.Must(G.Log2(computedVector))))
-		perp = G.Must(G.Slice(log2prob, G.S(expectedValue)))
+		y := gorgonia.NewVector(network.G, float, gorgonia.WithName("yₜ+1"),
+			gorgonia.WithShape(network.VectorSize))
+		yT := tensor.NewDense(float,
+			y.Shape(),
+			tensor.WithBacking(gorgonia.Ones()(float, y.Shape()...)),
+		)
+		gorgonia.Let(y, yT)
+		vm := gorgonia.NewTapeMachine(network.G)
 
-		if cost == nil {
-			cost = loss
-		} else {
-			cost = G.Must(G.Add(cost, loss))
-		}
-		G.WithName("Cost")(cost)
-
-		if perplexity == nil {
-			perplexity = perp
-		} else {
-			perplexity = G.Must(G.Add(perplexity, perp))
-		}
-	}
-	//l.prevHidden = hidden
-	//l.prevCell = cell
-	//g := l.g.SubgraphRoots(cost, perplexity)
-	//l.g = g
-	return
-}
-
-// TrainingInfos returns info about the current training process
-type TrainingInfos struct {
-	Step       int
-	Perplexity float32
-	Cost       float32
-}
-
-// Train the model
-func (m *Model) Train(ctx context.Context, dset datasetter.FullTrainer, solver G.Solver, pauseChan <-chan struct{}) (<-chan TrainingInfos, <-chan error) {
-	infoChan := make(chan TrainingInfos, 0)
-	step := 0
-	errc := make(chan error, 1)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	paused := false
-
-	go func() {
-		if len(pauseChan) != 0 {
-			errc <- errors.New("pauseChan must not be buffered")
-			wg.Done()
-			return
-		}
-		var hiddenT, cellT tensor.Tensor
-		for {
-			select {
-			case <-ctx.Done():
-				errc <- nil
-				wg.Done()
-				return
-			case <-pauseChan:
-				paused = true
-			default:
-				if paused {
-					<-pauseChan
-					paused = false
+		for epoch := 0; epoch < maxEpoch; epoch++ {
+			r.Seek(0, io.SeekStart)
+			buf := bufio.NewReader(r)
+			rn, _, err := buf.ReadRune()
+			if err != nil {
+				if err == io.EOF {
+					break
 				}
-				step++
-				if hiddenT == nil {
-					hiddenT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize))
-				}
-				if cellT == nil {
-					cellT = tensor.New(tensor.Of(tensor.Float32), tensor.WithShape(m.hiddenSize))
-				}
-				lstm := m.newLSTM(hiddenT, cellT)
-				trainer, err := dset.GetTrainer()
+				log.Fatal(err)
+			}
+			setValue(network.Dict[rn], network.Xt.Value().Data().([]float64))
+
+			i := 0
+			bar := pb.New(total)
+			// show percents (by default already true)
+			bar.ShowPercent = true
+
+			// show bar (by default already true)
+			bar.ShowBar = true
+
+			bar.ShowCounters = true
+
+			bar.ShowTimeLeft = true
+			// and start
+			bar.Start()
+			for {
+				rn, _, err := buf.ReadRune()
+				//fmt.Printf("[epoch %v] => %2.2f%%\r", epoch, float64(i)*100/float64(total))
+				bar.Increment()
 				if err != nil {
-					errc <- err
-					wg.Done()
-					return
+					if err == io.EOF {
+						break
+					}
+					log.Fatal(err)
 				}
-				cost, perplexity, hidden, cell, err := lstm.cost(trainer)
+				setValue(network.Dict[rn], y.Value().Data().([]float64))
+				if network.Ht.Value() != nil {
+					copy(network.Htprev.Value().Data().([]float64), network.Ht.Value().Data().([]float64))
+				}
+				if network.Ct.Value() != nil {
+					copy(network.Ctprev.Value().Data().([]float64), network.Ct.Value().Data().([]float64))
+				}
+				//gorgonia.Let(network.Htprev, network.Ht.Value())
+				//gorgonia.Let(network.Ctprev, network.Ct.Value())
+				err = vm.RunAll()
 				if err != nil {
-					errc <- err
-					wg.Done()
-					return
+					log.Fatal(err)
 				}
-				machine := G.NewLispMachine(lstm.g)
-				if err := machine.RunAll(); err != nil {
-					errc <- err
-					wg.Done()
-					return
-				}
-				// send infos about this execution step in a non blocking channel
-				select {
-				case infoChan <- TrainingInfos{
-					Perplexity: perplexity.Value().Data().(float32),
-					Cost:       cost.Value().Data().(float32),
-					Step:       step,
-				}:
-				default:
-				}
-				copy(hiddenT.Data().([]float32), hidden.Value().Data().([]float32))
-				copy(cellT.Data().([]float32), cell.Value().Data().([]float32))
-				solver.Step(G.Nodes{
-					lstm.biasC, lstm.biasF, lstm.biasI, lstm.biasO, lstm.biasY,
-					lstm.uc, lstm.uf, lstm.ui, lstm.uo,
-					lstm.wc, lstm.wf, lstm.wi, lstm.wo, lstm.wy})
+				vm.Reset()
+
+				setValue(network.Dict[rn], network.Xt.Value().Data().([]float64))
+				i++
 			}
 		}
-	}()
-	go func() {
-		wg.Wait()
-		close(infoChan)
-	}()
-	return infoChan, errc
+	*/
 }

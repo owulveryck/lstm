@@ -1,50 +1,147 @@
-package lstm
+package main
 
 import (
-	"io"
-
-	"github.com/owulveryck/lstm/datasetter"
-	G "gorgonia.org/gorgonia"
+	"gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
-// forwardStep as described here https://en.wikipedia.org/wiki/Long_short-term_memory#LSTM_with_a_forget_gate
-// It returns the last hidden node and the last cell node
-func (l *lstm) forwardStep(dataSet datasetter.ReadWriter, prevHidden, prevCell *G.Node, step int) (*G.Node, *G.Node, error) {
-	// Read the current input vector
-	inputVector, err := dataSet.ReadInputVector(l.g)
+type lstm struct {
+	VectorSize, HiddenSize int
+	G                      *gorgonia.ExprGraph
+	Wi, Wf, Wc, Wo         *gorgonia.Node
+	Wd                     *gorgonia.Node
+	Ui, Uf, Uc, Uo         *gorgonia.Node
+	Bi, Bf, Bc, Bo         *gorgonia.Node
+	Htprev, Ctprev         *gorgonia.Node
+	Dict                   map[rune]int
+}
 
-	switch {
-	case err != nil && err != io.EOF:
-		return prevHidden, prevCell, err
-	case err == io.EOF:
-		return prevHidden, prevCell, nil
+func newLSTM(vectorSize, hiddenSize int) *lstm {
+	g := gorgonia.NewGraph()
+	// Declarations
+	//	xt := gorgonia.NewVector(g, float, gorgonia.WithName("xₜ"),
+	//		gorgonia.WithShape(vectorSize))
+	//	htprev := gorgonia.NewVector(g, float, gorgonia.WithName("hₜ₋₁"),
+	//		gorgonia.WithShape(hiddenSize))
+	//ctprev := gorgonia.NewVector(g, float, gorgonia.WithName("cₜ₋₁"),
+	//	gorgonia.WithShape(hiddenSize))
+	wf := gorgonia.NewMatrix(g, float, gorgonia.WithName("Wf"),
+		gorgonia.WithShape(hiddenSize, vectorSize))
+	wi := gorgonia.NewMatrix(g, float, gorgonia.WithName("Wᵢ"),
+		gorgonia.WithShape(hiddenSize, vectorSize))
+	wo := gorgonia.NewMatrix(g, float, gorgonia.WithName("Wₒ"),
+		gorgonia.WithShape(hiddenSize, vectorSize))
+	wc := gorgonia.NewMatrix(g, float, gorgonia.WithName("Wc"),
+		gorgonia.WithShape(hiddenSize, vectorSize))
+	wd := gorgonia.NewMatrix(g, float, gorgonia.WithName("Wd"),
+		gorgonia.WithShape(vectorSize, hiddenSize))
+	uf := gorgonia.NewMatrix(g, float, gorgonia.WithName("Uf"),
+		gorgonia.WithShape(hiddenSize, hiddenSize))
+	ui := gorgonia.NewMatrix(g, float, gorgonia.WithName("Uᵢ"),
+		gorgonia.WithShape(hiddenSize, hiddenSize))
+	uo := gorgonia.NewMatrix(g, float, gorgonia.WithName("Uₒ"),
+		gorgonia.WithShape(hiddenSize, hiddenSize))
+	uc := gorgonia.NewMatrix(g, float, gorgonia.WithName("Uc"),
+		gorgonia.WithShape(hiddenSize, hiddenSize))
+	bf := gorgonia.NewVector(g, float, gorgonia.WithName("bf"),
+		gorgonia.WithShape(hiddenSize))
+	bi := gorgonia.NewVector(g, float, gorgonia.WithName("bᵢ"),
+		gorgonia.WithShape(hiddenSize))
+	bo := gorgonia.NewVector(g, float, gorgonia.WithName("bₒ"),
+		gorgonia.WithShape(hiddenSize))
+	bc := gorgonia.NewVector(g, float, gorgonia.WithName("bc"),
+		gorgonia.WithShape(hiddenSize))
+
+	/*
+		yt := gorgonia.Must(gorgonia.SoftMax(
+			gorgonia.Must(
+				gorgonia.Mul(
+					wd, ht,
+				))))
+	*/
+
+	return &lstm{
+		G:  g,
+		Wi: wi, Wf: wf, Wo: wo, Wc: wc,
+		Wd: wd,
+		Ui: ui, Uf: uf, Uo: uo, Uc: uc,
+		Bi: bi, Bf: bf, Bo: bo, Bc: bc,
+
+		VectorSize: vectorSize,
+		HiddenSize: hiddenSize,
 	}
-	// Helper function for clarity
-	// r is a replacer that will change ₜ and ₜ₋₁ for step and step-1
-	// this is to avoid conflict in the graph due to the recursion
-	r := replace(`ₜ`, step)
-	set := func(ident, equation string) *G.Node {
-		//log.Printf("==> %v=%v", r.Replace(ident), r.Replace(equation))
-		res, _ := l.parser.Parse(r.Replace(equation))
-		l.parser.Set(r.Replace(ident), res)
-		return res
+}
+
+func (l *lstm) initLearnables(initFn gorgonia.InitWFn) {
+	for i := 0; i < len(l.learnableNodes()); i++ {
+		currentNode := l.learnableNodes()[i]
+		t := tensor.NewDense(float,
+			currentNode.Shape(),
+			tensor.WithBacking(initFn(float, currentNode.Shape()...)),
+		)
+		gorgonia.Let(currentNode, t)
 	}
+}
 
-	l.parser.Set(r.Replace(`xₜ`), inputVector)
-	if step == 0 {
-		l.parser.Set(r.Replace(`hₜ₋₁`), prevHidden)
-		l.parser.Set(r.Replace(`cₜ₋₁`), prevCell)
-
+func (l *lstm) learnableNodes() []*gorgonia.Node {
+	return []*gorgonia.Node{
+		l.Wi, l.Wf, l.Wc, l.Wo,
+		l.Wd,
+		l.Ui, l.Uf, l.Uc, l.Uo,
+		l.Bi, l.Bf, l.Bc, l.Bo,
 	}
-	set(`iₜ`, `σ(Wᵢ·xₜ+Uᵢ·hₜ₋₁+Bᵢ)`)
-	set(`fₜ`, `σ(Wf·xₜ+Uf·hₜ₋₁+Bf)`) // dot product made with ctrl+k . M
-	set(`oₜ`, `σ(Wₒ·xₜ+Uₒ·hₜ₋₁+Bₒ)`)
-	// ċₜis a vector of new candidates value
-	set(`ĉₜ`, `tanh(Wc·xₜ+Uc·hₜ₋₁+Bc)`) // c made with ctrl+k c >
-	ct := set(`cₜ`, `(fₜ*cₜ₋₁)+(iₜ*ĉₜ)`)
-	ht := set(`hₜ`, `oₜ*tanh(cₜ)`)
-	y := set(`yₜ`, `softmax(Wy·hₜ+By)`)
+}
 
-	dataSet.WriteComputedVector(y)
-	return l.forwardStep(dataSet, ht, ct, step+1)
+// newCell to the LSTM network
+func (l *lstm) newCell(x, hPrev, cPrev *gorgonia.Node) (*gorgonia.Node, *gorgonia.Node) {
+	it := gorgonia.Must(
+		gorgonia.Sigmoid(
+			gorgonia.Must(
+				gorgonia.Add(
+					gorgonia.Must(
+						gorgonia.Add(
+							gorgonia.Must(gorgonia.Mul(l.Wi, x)),
+							gorgonia.Must(gorgonia.Mul(l.Ui, hPrev)))),
+					l.Bi,
+				))))
+	ft := gorgonia.Must(
+		gorgonia.Sigmoid(
+			gorgonia.Must(
+				gorgonia.Add(
+					gorgonia.Must(
+						gorgonia.Add(
+							gorgonia.Must(gorgonia.Mul(l.Wf, x)),
+							gorgonia.Must(gorgonia.Mul(l.Uf, hPrev)))),
+					l.Bf,
+				))))
+	ot := gorgonia.Must(
+		gorgonia.Sigmoid(
+			gorgonia.Must(
+				gorgonia.Add(
+					gorgonia.Must(
+						gorgonia.Add(
+							gorgonia.Must(gorgonia.Mul(l.Wo, x)),
+							gorgonia.Must(gorgonia.Mul(l.Uo, hPrev)))),
+					l.Bo,
+				))))
+	cct := gorgonia.Must(
+		gorgonia.Tanh(
+			gorgonia.Must(
+				gorgonia.Add(
+					gorgonia.Must(
+						gorgonia.Add(
+							gorgonia.Must(gorgonia.Mul(l.Wc, x)),
+							gorgonia.Must(gorgonia.Mul(l.Uc, hPrev)))),
+					l.Bc,
+				))))
+	c := gorgonia.Must(gorgonia.Add(
+		gorgonia.Must(gorgonia.HadamardProd(ft, cPrev)),
+		gorgonia.Must(gorgonia.HadamardProd(it, cct)),
+	))
+	h := gorgonia.Must(
+		gorgonia.HadamardProd(
+			ot,
+			gorgonia.Must(gorgonia.Tanh(c)),
+		))
+	return h, c
 }
