@@ -2,7 +2,6 @@ package main
 
 import (
 	"gorgonia.org/gorgonia"
-	"gorgonia.org/tensor"
 )
 
 type lstm struct {
@@ -69,17 +68,6 @@ func newLSTM(vectorSize, hiddenSize int) *lstm {
 
 		VectorSize: vectorSize,
 		HiddenSize: hiddenSize,
-	}
-}
-
-func (l *lstm) initLearnables(initFn gorgonia.InitWFn) {
-	for i := 0; i < len(l.learnableNodes()); i++ {
-		currentNode := l.learnableNodes()[i]
-		t := tensor.NewDense(float,
-			currentNode.Shape(),
-			tensor.WithBacking(initFn(float, currentNode.Shape()...)),
-		)
-		gorgonia.Let(currentNode, t)
 	}
 }
 

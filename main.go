@@ -37,7 +37,7 @@ func runTrain(dataset string) {
 
 	lstm := newLSTM(vectorSize, hiddenSize)
 	lstm.Dict = dict
-	lstm.initLearnables(gorgonia.Gaussian(0, 0.08))
+	initLearnables(lstm.learnableNodes(), gorgonia.Gaussian(0, 0.08))
 	backup, err := os.Create("backup.bin")
 	if err != nil {
 		log.Fatal(err)

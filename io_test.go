@@ -18,7 +18,7 @@ func TestSaveLoad(t *testing.T) {
 		t.Fatal(err)
 	}
 	backup.Reset()
-	lstm.initLearnables(gorgonia.Gaussian(0, 0.08))
+	initLearnables(lstm.learnableNodes(), gorgonia.Gaussian(0, 0.08))
 	err = lstm.Save(&backup)
 	if err != nil {
 		t.Fatal(err)
