@@ -3,6 +3,7 @@ package lstm
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"gorgonia.org/gorgonia"
 	"gorgonia.org/tensor"
 )
@@ -22,8 +23,8 @@ func TestNewCell_forward_pass(t *testing.T) {
 		gorgonia.WithShape(hiddenSize))
 	h, c := lstm.NewCell(x, hPrev, cPrev)
 	xT := tensor.NewDense(float, []int{vectorSize}, tensor.WithBacking([]float64{1, 2, 3}))
-	hPrevT := tensor.NewDense(float, []int{hiddenSize}, tensor.WithBacking([]float64{0, 0}))
-	cPrevT := tensor.NewDense(float, []int{hiddenSize}, tensor.WithBacking([]float64{0, 0}))
+	hPrevT := tensor.NewDense(float, []int{hiddenSize}, tensor.WithBacking([]float64{1, 2}))
+	cPrevT := tensor.NewDense(float, []int{hiddenSize}, tensor.WithBacking([]float64{1, 2}))
 	gorgonia.Let(x, xT)
 	gorgonia.Let(cPrev, cPrevT)
 	gorgonia.Let(hPrev, hPrevT)
@@ -32,11 +33,48 @@ func TestNewCell_forward_pass(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(x.Value())
-	t.Log(cPrev.Value())
-	t.Log(hPrev.Value())
-	t.Log(h.Value())
-	t.Log(c.Value())
+	vm.Close()
+	assert.InDeltaSlice(t, []float64{0.960770898451274, 0.9929241586741123}, h.Value().Data().([]float64), 1e-10, "bad h value")
+	assert.InDeltaSlice(t, []float64{0.9618409812007414, 0.9944934973187705}, c.Value().Data().([]float64), 1e-10, "bad c value")
+	h2, c2 := lstm.NewCell(x, h, c)
+	vm = gorgonia.NewTapeMachine(lstm.G)
+	err = vm.RunAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	vm.Close()
+	assert.InDeltaSlice(t, []float64{0.9916307952465716, 0.9956302280119376}, h2.Value().Data().([]float64), 1e-10, "bad h value")
+	assert.InDeltaSlice(t, []float64{0.9940468069105712, 0.9990725394785818}, c2.Value().Data().([]float64), 1e-10, "bad c value")
+}
+
+func TestNewCell_forward_pass_composite(t *testing.T) {
+	vectorSize := 3
+	hiddenSize := 2
+	lstm := NewLSTM(vectorSize, hiddenSize)
+	initWeights(lstm)
+
+	x := gorgonia.NewVector(lstm.G, float, gorgonia.WithName("xₜ"),
+		gorgonia.WithShape(vectorSize))
+	hPrev := gorgonia.NewVector(lstm.G, float, gorgonia.WithName("hₜ₋₁"),
+		gorgonia.WithShape(hiddenSize))
+	cPrev := gorgonia.NewVector(lstm.G, float, gorgonia.WithName("cₜ₋₁"),
+		gorgonia.WithShape(hiddenSize))
+	h, c := lstm.NewCell(x, hPrev, cPrev)
+	xT := tensor.NewDense(float, []int{vectorSize}, tensor.WithBacking([]float64{1, 2, 3}))
+	hPrevT := tensor.NewDense(float, []int{hiddenSize}, tensor.WithBacking([]float64{1, 2}))
+	cPrevT := tensor.NewDense(float, []int{hiddenSize}, tensor.WithBacking([]float64{1, 2}))
+	gorgonia.Let(x, xT)
+	gorgonia.Let(cPrev, cPrevT)
+	gorgonia.Let(hPrev, hPrevT)
+	h2, c2 := lstm.NewCell(x, h, c)
+	vm := gorgonia.NewTapeMachine(lstm.G)
+	err := vm.RunAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	vm.Close()
+	assert.InDeltaSlice(t, []float64{0.9916307952465716, 0.9956302280119376}, h2.Value().Data().([]float64), 1e-10, "bad h value")
+	assert.InDeltaSlice(t, []float64{0.9940468069105712, 0.9990725394785818}, c2.Value().Data().([]float64), 1e-10, "bad c value")
 }
 
 func initWeights(l *LSTM) {
@@ -64,5 +102,4 @@ func initWeights(l *LSTM) {
 	gorgonia.Let(l.Bf, bfT)
 	gorgonia.Let(l.Bc, bcT)
 	gorgonia.Let(l.Bo, boT)
-
 }
