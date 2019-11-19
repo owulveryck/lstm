@@ -8,7 +8,6 @@ import (
 	"gorgonia.org/tensor"
 )
 
-// https://medium.com/@aidangomez/let-s-do-this-f9b699de31d9
 func TestNewCell_forward_pass(t *testing.T) {
 	vectorSize := 3
 	hiddenSize := 2
