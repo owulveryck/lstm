@@ -1,4 +1,4 @@
-package main
+package lstm
 
 import (
 	"encoding/gob"
@@ -8,7 +8,7 @@ import (
 	"gorgonia.org/tensor"
 )
 
-func (l *lstm) Save(w io.Writer) error {
+func (l *LSTM) Save(w io.Writer) error {
 	enc := gob.NewEncoder(w)
 	var err error
 	err = enc.Encode(l.VectorSize)
@@ -30,7 +30,7 @@ func (l *lstm) Save(w io.Writer) error {
 }
 
 // Create returns a trained LSTM with values extracted from a backup
-func newTrainedLSTM(r io.Reader) (*lstm, error) {
+func NewTrainedLSTM(r io.Reader) (*LSTM, error) {
 	dec := gob.NewDecoder(r)
 	var vectorSize, hiddenSize int
 	var err error
@@ -42,7 +42,7 @@ func newTrainedLSTM(r io.Reader) (*lstm, error) {
 	if err != nil {
 		return nil, err
 	}
-	lstm := newLSTM(vectorSize, hiddenSize)
+	lstm := NewLSTM(vectorSize, hiddenSize)
 	for i := 0; i < len(lstm.learnableNodes()); i++ {
 		currentNode := lstm.learnableNodes()[i]
 		var t tensor.Dense

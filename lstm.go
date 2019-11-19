@@ -1,20 +1,22 @@
-package main
+package lstm
 
 import (
 	"gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
-type lstm struct {
+var float = tensor.Float64
+
+type LSTM struct {
 	VectorSize, HiddenSize int
 	G                      *gorgonia.ExprGraph
 	Wi, Wf, Wc, Wo         *gorgonia.Node
-	Wd                     *gorgonia.Node
 	Ui, Uf, Uc, Uo         *gorgonia.Node
 	Bi, Bf, Bc, Bo         *gorgonia.Node
 	Dict                   map[rune]int
 }
 
-func newLSTM(vectorSize, hiddenSize int) *lstm {
+func NewLSTM(vectorSize, hiddenSize int) *LSTM {
 	g := gorgonia.NewGraph()
 	// Declarations
 	//	xt := gorgonia.NewVector(g, float, gorgonia.WithName("xₜ"),
@@ -31,8 +33,6 @@ func newLSTM(vectorSize, hiddenSize int) *lstm {
 		gorgonia.WithShape(hiddenSize, vectorSize))
 	wc := gorgonia.NewMatrix(g, float, gorgonia.WithName("Wc"),
 		gorgonia.WithShape(hiddenSize, vectorSize))
-	wd := gorgonia.NewMatrix(g, float, gorgonia.WithName("Wd"),
-		gorgonia.WithShape(vectorSize, hiddenSize))
 	uf := gorgonia.NewMatrix(g, float, gorgonia.WithName("Uf"),
 		gorgonia.WithShape(hiddenSize, hiddenSize))
 	ui := gorgonia.NewMatrix(g, float, gorgonia.WithName("Uᵢ"),
@@ -58,10 +58,9 @@ func newLSTM(vectorSize, hiddenSize int) *lstm {
 				))))
 	*/
 
-	return &lstm{
+	return &LSTM{
 		G:  g,
 		Wi: wi, Wf: wf, Wo: wo, Wc: wc,
-		Wd: wd,
 		Ui: ui, Uf: uf, Uo: uo, Uc: uc,
 		Bi: bi, Bf: bf, Bo: bo, Bc: bc,
 
@@ -70,65 +69,22 @@ func newLSTM(vectorSize, hiddenSize int) *lstm {
 	}
 }
 
-func (l *lstm) learnableNodes() []*gorgonia.Node {
+func (l *LSTM) learnableNodes() []*gorgonia.Node {
 	return []*gorgonia.Node{
 		l.Wi, l.Wf, l.Wc, l.Wo,
-		l.Wd,
 		l.Ui, l.Uf, l.Uc, l.Uo,
 		l.Bi, l.Bf, l.Bc, l.Bo,
 	}
 }
 
-// newCell to the LSTM network
-func (l *lstm) newCell(x, hPrev, cPrev *gorgonia.Node) (*gorgonia.Node, *gorgonia.Node) {
-	it := gorgonia.Must(
-		gorgonia.Sigmoid(
-			gorgonia.Must(
-				gorgonia.Add(
-					gorgonia.Must(
-						gorgonia.Add(
-							gorgonia.Must(gorgonia.Mul(l.Wi, x)),
-							gorgonia.Must(gorgonia.Mul(l.Ui, hPrev)))),
-					l.Bi,
-				))))
-	ft := gorgonia.Must(
-		gorgonia.Sigmoid(
-			gorgonia.Must(
-				gorgonia.Add(
-					gorgonia.Must(
-						gorgonia.Add(
-							gorgonia.Must(gorgonia.Mul(l.Wf, x)),
-							gorgonia.Must(gorgonia.Mul(l.Uf, hPrev)))),
-					l.Bf,
-				))))
-	ot := gorgonia.Must(
-		gorgonia.Sigmoid(
-			gorgonia.Must(
-				gorgonia.Add(
-					gorgonia.Must(
-						gorgonia.Add(
-							gorgonia.Must(gorgonia.Mul(l.Wo, x)),
-							gorgonia.Must(gorgonia.Mul(l.Uo, hPrev)))),
-					l.Bo,
-				))))
-	cct := gorgonia.Must(
-		gorgonia.Tanh(
-			gorgonia.Must(
-				gorgonia.Add(
-					gorgonia.Must(
-						gorgonia.Add(
-							gorgonia.Must(gorgonia.Mul(l.Wc, x)),
-							gorgonia.Must(gorgonia.Mul(l.Uc, hPrev)))),
-					l.Bc,
-				))))
-	c := gorgonia.Must(gorgonia.Add(
-		gorgonia.Must(gorgonia.HadamardProd(ft, cPrev)),
-		gorgonia.Must(gorgonia.HadamardProd(it, cct)),
-	))
-	h := gorgonia.Must(
-		gorgonia.HadamardProd(
-			ot,
-			gorgonia.Must(gorgonia.Tanh(c)),
-		))
+// newCell to the LSTM network. It takes as input x_t, h_{t-1}, c_{t-1} and returns
+// h_t and c_t
+func (l *LSTM) NewCell(x, hPrev, cPrev *gorgonia.Node) (*gorgonia.Node, *gorgonia.Node) {
+	it := sigmoid(add(add(mul(l.Wi, x), mul(l.Ui, hPrev)), l.Bi))
+	ft := sigmoid(add(add(mul(l.Wf, x), mul(l.Uf, hPrev)), l.Bf))
+	ot := sigmoid(add(add(mul(l.Wo, x), mul(l.Uo, hPrev)), l.Bo))
+	cct := tanh(add(add(mul(l.Wc, x), mul(l.Uc, hPrev)), l.Bc))
+	c := add(hadamardProd(ft, cPrev), hadamardProd(it, cct))
+	h := hadamardProd(ot, tanh(c))
 	return h, c
 }

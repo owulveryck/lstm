@@ -8,10 +8,7 @@ import (
 	"os"
 
 	"gorgonia.org/gorgonia"
-	"gorgonia.org/tensor"
 )
-
-var float = tensor.Float64
 
 func main() {
 	train := flag.Bool("train", false, "training mode")
@@ -35,7 +32,7 @@ func runTrain(dataset string) {
 	vectorSize := len(dict)
 	hiddenSize := 1024
 
-	lstm := newLSTM(vectorSize, hiddenSize)
+	lstm := NewLSTM(vectorSize, hiddenSize)
 	lstm.Dict = dict
 	initLearnables(lstm.learnableNodes(), gorgonia.Gaussian(0, 0.08))
 	backup, err := os.Create("backup.bin")
@@ -53,7 +50,7 @@ func runPredict() {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	network, err := newTrainedLSTM(f)
+	network, err := NewTrainedLSTM(f)
 	if err != nil {
 		log.Fatal(err)
 	}

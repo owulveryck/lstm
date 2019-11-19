@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-func train(ctx context.Context, network *lstm, r io.ReadSeeker, total int) {
+func train(ctx context.Context, network *LSTM, r io.ReadSeeker, total int) {
 	/*
 		maxEpoch := 1
 		//miniBatchSize := 10
