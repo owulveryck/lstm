@@ -11,7 +11,6 @@ type lstm struct {
 	Wd                     *gorgonia.Node
 	Ui, Uf, Uc, Uo         *gorgonia.Node
 	Bi, Bf, Bc, Bo         *gorgonia.Node
-	Htprev, Ctprev         *gorgonia.Node
 	Dict                   map[rune]int
 }
 
