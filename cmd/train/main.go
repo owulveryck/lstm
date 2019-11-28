@@ -31,12 +31,3 @@ func main() {
 	nn.Dict = dict
 	initLearnables(nn.Learnables())
 }
-
-func save(nn *lstm.LSTM, outputFile string) error {
-	backup, err := os.Create(outputFile)
-	if err != nil {
-		return err
-	}
-	defer backup.Close()
-	return nn.Save(backup)
-}
