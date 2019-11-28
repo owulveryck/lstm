@@ -56,7 +56,7 @@ func NewTrainedLSTM(r io.Reader) (*LSTM, error) {
 		}
 
 	}
-	var dict map[rune]int
+	var dict []rune
 	err = dec.Decode(&dict)
 	if err != nil {
 		return nil, err

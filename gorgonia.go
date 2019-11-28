@@ -17,3 +17,7 @@ func tanh(a *gorgonia.Node) *gorgonia.Node {
 func hadamardProd(a, b *gorgonia.Node) *gorgonia.Node {
 	return gorgonia.Must(gorgonia.HadamardProd(a, b))
 }
+
+func softmax(a *gorgonia.Node) *gorgonia.Node {
+	return gorgonia.Must(gorgonia.SoftMax(a))
+}
