@@ -85,3 +85,12 @@ func (l *LSTM) NewCell(x, hPrev, cPrev *gorgonia.Node) (*gorgonia.Node, *gorgoni
 func (l *LSTM) LogProb(h *gorgonia.Node) *gorgonia.Node {
 	return softmax(add(mul(l.Wy, h), l.By))
 }
+
+func (l *LSTM) Learnables() []*gorgonia.Node {
+	return []*gorgonia.Node{
+		l.Wi, l.Wf, l.Wc, l.Wo,
+		l.Ui, l.Uf, l.Uc, l.Uo,
+		l.Bi, l.Bf, l.Bc, l.Bo,
+		l.Wy, l.By,
+	}
+}
