@@ -26,15 +26,19 @@ func newDataset(input io.ReadSeeker, dict []rune) *dataset {
 }
 
 // read values fron the input structure and make it fit into the x receiver
-func (d *dataset) read(x *tensor.Dense) error {
+// it returns the number of bytes read
+func (d *dataset) read(x *tensor.Dense) (int, error) {
 	rdr := bufio.NewReader(d.input)
 	runes := make([]rune, x.Shape()[0])
+	bytesRead := 0
 	var err error
+	var n int
 	for i := 0; i < x.Shape()[1]; i++ {
-		runes[i], _, err = rdr.ReadRune()
+		runes[i], n, err = rdr.ReadRune()
 		if err != nil {
-			return err
+			return bytesRead, err
 		}
+		bytesRead += n
 	}
 	// free the tensor
 	for i := 0; i < len(x.Data().([]float64)); i++ {
@@ -43,5 +47,5 @@ func (d *dataset) read(x *tensor.Dense) error {
 	for i, run := range runes {
 		x.SetAt(float64(1), i, d.reverse[run])
 	}
-	return nil
+	return bytesRead, nil
 }
