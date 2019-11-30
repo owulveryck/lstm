@@ -1,8 +1,9 @@
-package main
+package text
 
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"sync"
 	"testing"
@@ -11,10 +12,8 @@ import (
 )
 
 func TestFeeder(t *testing.T) {
-	config := configuration{
-		Step:      5,
-		BatchSize: 4,
-	}
+	batchSize := 4
+	step := 5
 	expectedVals := []float64{
 		1, 0, 0, 0,
 		0, 1, 0, 0,
@@ -22,7 +21,7 @@ func TestFeeder(t *testing.T) {
 		0, 0, 0, 1}
 	dict := []rune{'a', 'b', 'c', 0x2318}
 	testinput := bytes.NewReader([]byte(`abc⌘abc⌘abc⌘abc⌘abc⌘`))
-	inputC, errC := feeder(context.Background(), dict, testinput, config)
+	inputC, errC := Feeder(context.Background(), dict, testinput, batchSize, step)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -43,4 +42,16 @@ func TestFeeder(t *testing.T) {
 		t.Fail()
 	}
 	wg.Wait()
+}
+
+func ExampleFeeder() {
+	dict := []rune{'a', 'b', 'c', 0x2318}
+	testinput := bytes.NewReader([]byte(`abc⌘`))
+	inputC, _ := Feeder(context.Background(), dict, testinput, 4, 1)
+	x := <-inputC
+	fmt.Println(x)
+	// Output:⎡1  0  0  0⎤
+	// ⎢0  1  0  0⎥
+	// ⎢0  0  1  0⎥
+	// ⎣0  0  0  1⎦
 }
