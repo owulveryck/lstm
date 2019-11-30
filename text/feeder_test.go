@@ -46,12 +46,12 @@ func TestFeeder(t *testing.T) {
 
 func ExampleFeeder() {
 	dict := []rune{'a', 'b', 'c', 0x2318}
-	testinput := bytes.NewReader([]byte(`abc⌘`))
+	testinput := bytes.NewReader([]byte(`cba⌘`))
 	inputC, _ := Feeder(context.Background(), dict, testinput, 4, 1)
 	x := <-inputC
 	fmt.Println(x)
-	// Output:⎡1  0  0  0⎤
+	// Output:⎡0  0  1  0⎤
 	// ⎢0  1  0  0⎥
-	// ⎢0  0  1  0⎥
+	// ⎢1  0  0  0⎥
 	// ⎣0  0  0  1⎦
 }
