@@ -1,19 +1,18 @@
 package text
 
 import (
-	"bufio"
-	"io"
+	"bytes"
 
 	"gorgonia.org/tensor"
 )
 
 type dataset struct {
-	input   io.ReadSeeker
+	input   *bytes.Reader
 	dict    []rune
 	reverse map[rune]int
 }
 
-func newDataset(input io.ReadSeeker, dict []rune) *dataset {
+func newDataset(input *bytes.Reader, dict []rune) *dataset {
 	reverse := make(map[rune]int, len(dict))
 	for i := 0; i < len(dict); i++ {
 		reverse[dict[i]] = i
@@ -28,7 +27,7 @@ func newDataset(input io.ReadSeeker, dict []rune) *dataset {
 // read values fron the input structure and make it fit into the x receiver
 // it returns the number of bytes read
 func (d *dataset) read(x *tensor.Dense) (int, error) {
-	rdr := bufio.NewReader(d.input)
+	rdr := d.input
 	runes := make([]rune, x.Shape()[1])
 	bytesRead := 0
 	var err error
