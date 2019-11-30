@@ -7,7 +7,7 @@ import (
 	"github.com/owulveryck/lstm"
 )
 
-func TestTrain(t *testing.T) {
+func TestRun(t *testing.T) {
 	config := configuration{
 		HiddenSize: 10,
 		Epoch:      5,
@@ -21,7 +21,7 @@ func TestTrain(t *testing.T) {
 	nn := lstm.NewLSTM(vectorSize, config.HiddenSize)
 	nn.Dict = dict
 	initLearnables(nn.Learnables())
-	err := train(nn, sample, config)
+	err := run(nn, sample, config)
 	if err != nil {
 		t.Fatal(err)
 	}
