@@ -45,3 +45,18 @@ func initLearnables(nodes []*gorgonia.Node, initFn gorgonia.InitWFn) {
 		gorgonia.Let(currentNode, t)
 	}
 }
+
+func ExampleNewTrainedLSTM() {
+	vectorSize := 100
+	hiddenSize := 100
+	lstm := NewLSTM(vectorSize, hiddenSize)
+	var backup bytes.Buffer
+	err := lstm.Save(&backup)
+	if err == nil {
+		t.Fatal(err)
+	}
+	restored, err := NewTrainedLSTM(&backup)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
