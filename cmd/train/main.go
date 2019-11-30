@@ -13,6 +13,7 @@ type configuration struct {
 	HiddenSize int `envconfig:"HIDDEN_SIZE" default:"1024" required:"true"`
 	Epoch      int `envconfig:"EPOCH" default:"100" required:"true"`
 	BatchSize  int `envconfig:"BATCH_SIZE" default:"100" required:"true"`
+	Step       int `envconfig:"STEP" default:"1" required:"true"`
 }
 
 func usage() error {

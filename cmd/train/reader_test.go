@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestFile_offset(t *testing.T) {
+func TestMove(t *testing.T) {
 	testinput := bytes.NewReader([]byte(`abc⌘abc⌘abc⌘abc⌘abc⌘`))
 	step := 4
 	for {

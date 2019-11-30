@@ -33,7 +33,7 @@ func (d *dataset) read(x *tensor.Dense) (int, error) {
 	bytesRead := 0
 	var err error
 	var n int
-	for i := 0; i < x.Shape()[1]; i++ {
+	for i := 0; i < x.Shape()[0]; i++ {
 		runes[i], n, err = rdr.ReadRune()
 		if err != nil {
 			return bytesRead, err
