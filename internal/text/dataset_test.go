@@ -46,7 +46,7 @@ func TestDataset_Read_batchsize5(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if n != 6 {
+	if n != 7 {
 		t.Fail()
 	}
 	val, ok := x.Data().([]float64)

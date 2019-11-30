@@ -34,12 +34,11 @@ func TestFeeder(t *testing.T) {
 	}()
 	i := 0
 	for x := range inputC {
-		t.Log(x)
 		assert.Equal(t, expectedVals, x.Data().([]float64), "data not equal")
 		i++
 	}
 	if i != 5 {
-		t.Fail()
+		t.Fatalf("expected 5 values, but got %v", i)
 	}
 	wg.Wait()
 }

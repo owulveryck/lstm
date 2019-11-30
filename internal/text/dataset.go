@@ -29,11 +29,11 @@ func newDataset(input io.ReadSeeker, dict []rune) *dataset {
 // it returns the number of bytes read
 func (d *dataset) read(x *tensor.Dense) (int, error) {
 	rdr := bufio.NewReader(d.input)
-	runes := make([]rune, x.Shape()[0])
+	runes := make([]rune, x.Shape()[1])
 	bytesRead := 0
 	var err error
 	var n int
-	for i := 0; i < x.Shape()[0]; i++ {
+	for i := 0; i < x.Shape()[1]; i++ {
 		runes[i], n, err = rdr.ReadRune()
 		if err != nil {
 			return bytesRead, err
@@ -45,7 +45,7 @@ func (d *dataset) read(x *tensor.Dense) (int, error) {
 		x.Data().([]float64)[i] = 0
 	}
 	for i, run := range runes {
-		x.SetAt(float64(1), i, d.reverse[run])
+		x.SetAt(float64(1), d.reverse[run], i)
 	}
 	return bytesRead, nil
 }
