@@ -17,6 +17,8 @@ type LSTM struct {
 	Dict                   []rune
 }
 
+// NewLSTM returns an empty LSTM. Only the nodes are created, but the graph does not hold any equation.
+// It is the responsibility of the user to call NewCell to populate the graph
 func NewLSTM(vectorSize, hiddenSize int) *LSTM {
 	g := gorgonia.NewGraph()
 	wf := gorgonia.NewMatrix(g, float, gorgonia.WithName("Wf"),
