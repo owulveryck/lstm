@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"testing"
 
 	"github.com/owulveryck/lstm"
@@ -22,7 +21,7 @@ func TestTrain(t *testing.T) {
 	nn := lstm.NewLSTM(vectorSize, config.HiddenSize)
 	nn.Dict = dict
 	initLearnables(nn.Learnables())
-	err := train(context.Background(), nn, sample, config)
+	err := train(nn, sample, config)
 	if err != nil {
 		t.Fatal(err)
 	}

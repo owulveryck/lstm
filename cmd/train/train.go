@@ -3,34 +3,39 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 
 	"github.com/owulveryck/lstm"
 	"github.com/owulveryck/lstm/internal/text"
+	"gorgonia.org/tensor"
 )
 
-func train(ctx context.Context, nn *lstm.LSTM, input io.Reader, config configuration) error {
+func train(nn *lstm.LSTM, input io.Reader, config configuration) error {
+	// Create a new context
+	ctx := context.Background()
+	// Create a new context, with its cancellation function
+	// from the original context
+	ctx, cancel := context.WithCancel(ctx)
+
 	content, err := ioutil.ReadAll(input)
 	if err != nil {
 		return err
 	}
-	fmt.Println(content)
 	rdr := bytes.NewReader(content)
 	for i := 0; i < config.Epoch; i++ {
 		_, err := rdr.Seek(0, io.SeekStart)
-		a, _, _ := rdr.ReadRune()
-		fmt.Println(a)
-		_, err = rdr.Seek(0, io.SeekStart)
 		if err != nil {
 			return err
 		}
 		feedC, errC := text.Feeder(ctx, nn.Dict, rdr, config.BatchSize, config.Step)
 
-		fmt.Println(i)
 		for x := range feedC {
-			fmt.Println(x)
+			err := step(nn, x)
+			if err != nil {
+				cancel()
+				return err
+			}
 		}
 		if err := <-errC; err != nil {
 			if err != io.EOF {
@@ -38,5 +43,9 @@ func train(ctx context.Context, nn *lstm.LSTM, input io.Reader, config configura
 			}
 		}
 	}
+	return nil
+}
+
+func step(nn *lstm.LSTM, x *tensor.Dense) error {
 	return nil
 }
