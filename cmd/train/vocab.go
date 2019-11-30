@@ -7,7 +7,9 @@ import (
 	"sort"
 )
 
-func getVocabulary(r io.Reader) []rune {
+func getVocabulary(r io.ReadSeeker) []rune {
+	pointer, _ := r.Seek(0, io.SeekCurrent)
+	defer r.Seek(pointer, io.SeekStart)
 	dict := make(map[rune]int)
 	buf := bufio.NewReader(r)
 	for {
