@@ -13,7 +13,7 @@ import (
 
 func TestFeeder(t *testing.T) {
 	batchSize := 4
-	step := 5
+	step := 4
 	expectedVals := []float64{
 		1, 0, 0, 0,
 		0, 1, 0, 0,
