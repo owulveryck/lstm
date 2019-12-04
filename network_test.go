@@ -74,7 +74,7 @@ func TestCost(t *testing.T) {
 	gorgonia.Let(n.Y[1], yyT2)
 	gorgonia.Let(y[0], yT1)
 	gorgonia.Let(y[1], yT2)
-	cost, err := n.Cost(y)
+	cost, err := n.CrossEntropy(y)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestCost(t *testing.T) {
 	if !ok {
 		t.Fatal("Expected a scalar value for cost")
 	}
-	if v != -(math.Log(0.5) + math.Log(0.6)) {
+	if v != -(math.Log(0.5)+math.Log(0.6))/3 {
 		t.Fatal(v)
 	}
 
@@ -107,7 +107,7 @@ func TestCost_err(t *testing.T) {
 		gorgonia.NewVector(g, float, gorgonia.WithName("y1"),
 			gorgonia.WithShape(dim)),
 	}
-	_, err := n.Cost(y)
+	_, err := n.CrossEntropy(y)
 	if err == nil {
 		t.Fail()
 	}

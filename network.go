@@ -42,13 +42,13 @@ func NewNetwork(nn *LSTM, layers int) *Network {
 	}
 }
 
-func (n *Network) Cost(target []*gorgonia.Node) (cost *gorgonia.Node, err error) {
+func (n *Network) CrossEntropy(target []*gorgonia.Node) (cost *gorgonia.Node, err error) {
 	if len(target) != len(n.Y) {
 		return nil, errors.New("target and Y are of different size")
 	}
 	var loss *gorgonia.Node
 	for i := 0; i < len(n.Y); i++ {
-		loss = neg(mul(target[i], logarithm(n.Y[i])))
+		loss = neg(mean(hadamardProd(target[i], logarithm(n.Y[i]))))
 
 		if cost == nil {
 			cost = loss

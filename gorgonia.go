@@ -17,7 +17,18 @@ func tanh(a *gorgonia.Node) *gorgonia.Node {
 func hadamardProd(a, b *gorgonia.Node) *gorgonia.Node {
 	return gorgonia.Must(gorgonia.HadamardProd(a, b))
 }
-
 func softmax(a *gorgonia.Node) *gorgonia.Node {
 	return gorgonia.Must(gorgonia.SoftMax(a))
+}
+func logarithm(a *gorgonia.Node) *gorgonia.Node {
+	return gorgonia.Must(gorgonia.Log(a))
+}
+func log2(a *gorgonia.Node) *gorgonia.Node {
+	return gorgonia.Must(gorgonia.Log2(a))
+}
+func neg(a *gorgonia.Node) *gorgonia.Node {
+	return gorgonia.Must(gorgonia.Neg(a))
+}
+func mean(a *gorgonia.Node) *gorgonia.Node {
+	return gorgonia.Must(gorgonia.Mean(a))
 }
