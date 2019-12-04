@@ -84,7 +84,7 @@ func (l *LSTM) NewCell(x, hPrev, cPrev *gorgonia.Node) (*gorgonia.Node, *gorgoni
 	return h, c
 }
 
-func (l *LSTM) LogProb(h *gorgonia.Node) *gorgonia.Node {
+func (l *LSTM) Dense(h *gorgonia.Node) *gorgonia.Node {
 	return softmax(add(mul(l.Wy, h), l.By))
 }
 
