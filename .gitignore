@@ -2,3 +2,5 @@ lstm
 *.bin
 *.dot
 *.png
+cmd/train/train
+cmd/predict/predict

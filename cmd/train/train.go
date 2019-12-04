@@ -26,19 +26,52 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 	}
 	rdr := bytes.NewReader(content)
 	model := lstm.NewNetwork(nn, config.BatchSize)
+	y := generateY(nn.G, nn.VectorSize, config.BatchSize)
+	solver := gorgonia.NewRMSPropSolver(
+		gorgonia.WithLearnRate(config.Learnrate),
+		gorgonia.WithL2Reg(config.L2reg),
+		gorgonia.WithClip(config.ClipVal))
+	cost, err := model.CrossEntropy(y)
+	if err != nil {
+		return err
+	}
+	var costVal gorgonia.Value
+	gorgonia.Read(cost, &costVal)
+	_, err = gorgonia.Grad(cost, nn.Learnables()...)
+	if err != nil {
+		return err
+	}
+	vm := gorgonia.NewTapeMachine(nn.G, gorgonia.BindDualValues(nn.Learnables()...))
+	defer vm.Close()
 	for i := 0; i < config.Epoch; i++ {
+		fmt.Printf("Epoch %v: ", i)
 		_, err := rdr.Seek(0, io.SeekStart)
 		if err != nil {
 			return err
 		}
 		feedC, errC := text.Feeder(ctx, nn.Dict, rdr, config.BatchSize, config.Step)
 
-		for x := range feedC {
-			err := train(model, x)
+		for xT := range feedC {
+			fmt.Printf("=")
+
+			err := set(model, y, xT)
 			if err != nil {
 				cancel()
 				return err
 			}
+			err = vm.RunAll()
+			if err != nil {
+				cancel()
+				return err
+			}
+
+			err = solver.Step(gorgonia.NodesToValueGrads(nn.Learnables()))
+			if err != nil {
+				cancel()
+				return err
+			}
+			fmt.Println(costVal)
+			vm.Reset()
 		}
 		if err := <-errC; err != nil {
 			if err != io.EOF {
@@ -49,10 +82,6 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 	return nil
 }
 
-func train(model *lstm.Network, x *tensor.Dense) error {
-	return nil
-}
-
 func generateY(g *gorgonia.ExprGraph, vectorSize, batchSize int) []*gorgonia.Node {
 	y := make([]*gorgonia.Node, batchSize)
 	for i := 0; i < batchSize; i++ {
@@ -60,4 +89,10 @@ func generateY(g *gorgonia.ExprGraph, vectorSize, batchSize int) []*gorgonia.Nod
 			gorgonia.WithShape(vectorSize))
 	}
 	return y
+}
+
+func set(model *lstm.Network, n []*gorgonia.Node, xT *tensor.Dense) error {
+	if model.H[0].Value() == nil {
+	}
+	return nil
 }
