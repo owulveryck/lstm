@@ -10,7 +10,6 @@ import (
 	"github.com/owulveryck/lstm"
 	"github.com/owulveryck/lstm/internal/text"
 	"gorgonia.org/gorgonia"
-	"gorgonia.org/tensor"
 )
 
 func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
@@ -54,7 +53,12 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 		for xT := range feedC {
 			fmt.Printf("=")
 
-			err := set(model, y, xT)
+			err := setValues(y, xT)
+			if err != nil {
+				cancel()
+				return err
+			}
+			err = setLSTMValues(model, xT)
 			if err != nil {
 				cancel()
 				return err
@@ -89,10 +93,4 @@ func generateY(g *gorgonia.ExprGraph, vectorSize, batchSize int) []*gorgonia.Nod
 			gorgonia.WithShape(vectorSize))
 	}
 	return y
-}
-
-func set(model *lstm.Network, n []*gorgonia.Node, xT *tensor.Dense) error {
-	if model.H[0].Value() == nil {
-	}
-	return nil
 }
