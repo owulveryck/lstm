@@ -11,9 +11,9 @@ import (
 
 func TestRun(t *testing.T) {
 	config := configuration{
-		HiddenSize: 100,
-		Epoch:      4,
-		BatchSize:  5,
+		HiddenSize: 5,
+		Epoch:      50,
+		BatchSize:  10,
 		Step:       1,
 		Learnrate:  1e-1,
 		L2reg:      1e-5,
@@ -42,7 +42,6 @@ func TestRun(t *testing.T) {
 		predictNN, err := lstm.NewTrainedLSTM(buf)
 		model := lstm.NewNetwork(predictNN, 1)
 		backend := make([]float64, len(dict))
-		t.Logf("%v", string(predictNN.Dict[i]))
 		backend[i] = 1
 		xT := tensor.NewDense(tensor.Float64, []int{model.X[0].Shape()[0], 1}, tensor.WithBacking(backend))
 		gorgonia.Let(model.X[0], xT)
@@ -63,7 +62,18 @@ func TestRun(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Log(backend)
-		t.Log(model.Y[0].Value())
+		t.Logf("%v -> %v", string(predictNN.Dict[i]), string(predictNN.Dict[getIdx(model.Y[0].Value().Data().([]float64))]))
 	}
+}
+
+func getIdx(f []float64) int {
+	max := f[0]
+	var idx int
+	for i := 0; i < len(f); i++ {
+		if f[i] > max {
+			max = f[i]
+			idx = i
+		}
+	}
+	return idx
 }

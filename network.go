@@ -31,7 +31,7 @@ func NewNetwork(nn *LSTM, layers int) *Network {
 		x[i] = gorgonia.NewVector(nn.G, gorgonia.Float64, gorgonia.WithName(fmt.Sprintf("xₜ+%v", i)),
 			gorgonia.WithShape(vectorSize))
 		h[i+1], c[i+1] = nn.NewCell(x[i], h[i], c[i])
-		y[i] = nn.Dense(h[i+0])
+		y[i] = nn.Dense(h[i+1])
 	}
 	return &Network{
 		lstm: nn,
