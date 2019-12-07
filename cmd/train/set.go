@@ -35,8 +35,34 @@ func setValues(n []*gorgonia.Node, xT *tensor.Dense) error {
 	return nil
 }
 
-func setLSTMValues(model *lstm.Network, xT *tensor.Dense) error {
+func setLSTMValues(model *lstm.Network, y []*gorgonia.Node, xT *tensor.Dense) error {
+	viewY, err := xT.Slice(nil, makeRS(1, len(y)+1))
+	if err != nil {
+		return err
+	}
+	err = setValues(y, viewY.Materialize().(*tensor.Dense))
+	if err != nil {
+		return err
+	}
+	viewX, err := xT.Slice(nil, makeRS(0, len(model.X)))
+	if err != nil {
+		return err
+	}
+	err = setValues(model.X, viewX.Materialize().(*tensor.Dense))
+	if err != nil {
+		return err
+	}
 	if model.H[0].Value() == nil {
+		shape := model.H[0].Shape()
+		hT := tensor.NewDense(tensor.Float64, shape, tensor.WithBacking(make([]float64, shape[0])))
+		gorgonia.Let(model.H[0], hT)
+	} else {
+	}
+	if model.C[0].Value() == nil {
+		shape := model.C[0].Shape()
+		hT := tensor.NewDense(tensor.Float64, shape, tensor.WithBacking(make([]float64, shape[0])))
+		gorgonia.Let(model.C[0], hT)
+	} else {
 	}
 	return nil
 }
