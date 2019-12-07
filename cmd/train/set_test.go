@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"gorgonia.org/gorgonia"
@@ -67,8 +68,13 @@ func TestSetYValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := 0; i < batchSize; i++ {
-		t.Log(y[i].Value().Data().([]float64))
+	if !reflect.DeepEqual(y[0].Value().Data().([]float64), []float64{1, 5, 9}) {
+		t.Fatalf("y[0] is %v", y[0].Value().Data())
 	}
-
+	if !reflect.DeepEqual(y[1].Value().Data().([]float64), []float64{2, 6, 10}) {
+		t.Fatalf("y[1] is %v", y[1].Value().Data())
+	}
+	if !reflect.DeepEqual(y[2].Value().Data().([]float64), []float64{3, 7, 11}) {
+		t.Fatalf("y[2] is %v", y[2].Value().Data())
+	}
 }
