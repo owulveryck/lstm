@@ -43,7 +43,7 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 	vm := gorgonia.NewTapeMachine(nn.G, gorgonia.BindDualValues(nn.Learnables()...))
 	defer vm.Close()
 	for i := 0; i < config.Epoch; i++ {
-		fmt.Printf("Epoch %v: ", i)
+		//		fmt.Printf("Epoch %v: ", i)
 		_, err := rdr.Seek(0, io.SeekStart)
 		if err != nil {
 			return err
@@ -68,9 +68,9 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 				cancel()
 				return err
 			}
-			fmt.Println(costVal)
 			vm.Reset()
 		}
+		fmt.Println(costVal)
 		if err := <-errC; err != nil {
 			if err != io.EOF {
 				return err

@@ -10,11 +10,11 @@ import (
 func TestRun(t *testing.T) {
 	config := configuration{
 		HiddenSize: 10,
-		Epoch:      5,
+		Epoch:      500,
 		BatchSize:  5,
 		Step:       1,
 	}
-	sample := bytes.NewReader([]byte(`abc⌘abc⌘abc⌘abc⌘abc⌘`))
+	sample := bytes.NewReader([]byte(`abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘`))
 	dict := getVocabulary(sample)
 	vectorSize := len(dict)
 
