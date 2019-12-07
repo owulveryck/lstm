@@ -52,7 +52,7 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 
 		for xT := range feedC {
 
-			err := setLSTMValues(model, y, xT)
+			err := setInputValues(model, y, xT)
 			if err != nil {
 				cancel()
 				return err
@@ -69,7 +69,7 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 				return err
 			}
 			vm.Reset()
-			fmt.Println(costVal)
+			//			fmt.Println(costVal)
 		}
 		if err := <-errC; err != nil {
 			if err != io.EOF {

@@ -35,7 +35,7 @@ func setValues(n []*gorgonia.Node, xT *tensor.Dense) error {
 	return nil
 }
 
-func setLSTMValues(model *lstm.Network, y []*gorgonia.Node, xT *tensor.Dense) error {
+func setInputValues(model *lstm.Network, y []*gorgonia.Node, xT *tensor.Dense) error {
 	viewY, err := xT.Slice(nil, makeRS(1, len(y)+1))
 	if err != nil {
 		return err

@@ -101,7 +101,7 @@ func TestSetLSTMValues(t *testing.T) {
 				4, 5, 6, 7,
 				8, 9, 10, 11}))
 
-	err := setLSTMValues(network, y, xT)
+	err := setInputValues(network, y, xT)
 	if err != nil {
 		t.Fatal(err)
 	}
