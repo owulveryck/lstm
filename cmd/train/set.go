@@ -56,13 +56,19 @@ func setLSTMValues(model *lstm.Network, y []*gorgonia.Node, xT *tensor.Dense) er
 		shape := model.H[0].Shape()
 		hT := tensor.NewDense(tensor.Float64, shape, tensor.WithBacking(make([]float64, shape[0])))
 		gorgonia.Let(model.H[0], hT)
-	} else {
+	}
+	lastH := model.H[len(model.H)-1]
+	if lastH != nil {
+		gorgonia.Let(model.H[0], lastH.Value())
 	}
 	if model.C[0].Value() == nil {
 		shape := model.C[0].Shape()
 		hT := tensor.NewDense(tensor.Float64, shape, tensor.WithBacking(make([]float64, shape[0])))
 		gorgonia.Let(model.C[0], hT)
-	} else {
+	}
+	lastC := model.C[len(model.C)-1]
+	if lastC != nil {
+		gorgonia.Let(model.C[0], lastC.Value())
 	}
 	return nil
 }

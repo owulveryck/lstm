@@ -48,17 +48,11 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 		if err != nil {
 			return err
 		}
-		feedC, errC := text.Feeder(ctx, nn.Dict, rdr, config.BatchSize, config.Step)
+		feedC, errC := text.Feeder(ctx, nn.Dict, rdr, config.BatchSize+1, config.Step)
 
 		for xT := range feedC {
-			fmt.Printf("=")
 
-			err := setValues(y, xT)
-			if err != nil {
-				cancel()
-				return err
-			}
-			err = setLSTMValues(model, xT)
+			err := setLSTMValues(model, y, xT)
 			if err != nil {
 				cancel()
 				return err

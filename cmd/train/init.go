@@ -12,6 +12,9 @@ func initLearnables(nodes []*gorgonia.Node) {
 			currentNode.Shape(),
 			tensor.WithBacking(gorgonia.Gaussian(0, 0.08)(gorgonia.Float64, currentNode.Shape()...)),
 		)
-		gorgonia.Let(currentNode, t)
+		err := gorgonia.Let(currentNode, t)
+		if err != nil {
+			panic(err)
+		}
 	}
 }

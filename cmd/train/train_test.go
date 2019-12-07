@@ -8,7 +8,6 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	t.Skip()
 	config := configuration{
 		HiddenSize: 10,
 		Epoch:      5,
