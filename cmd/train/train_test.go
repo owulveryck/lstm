@@ -11,15 +11,17 @@ import (
 
 func TestRun(t *testing.T) {
 	config := configuration{
-		HiddenSize: 5,
+		HiddenSize: 50,
 		Epoch:      50,
-		BatchSize:  10,
+		BatchSize:  5,
 		Step:       1,
 		Learnrate:  1e-1,
 		L2reg:      1e-5,
 		ClipVal:    5.0,
 	}
-	sample := bytes.NewReader([]byte(`abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘`))
+	ds := []byte(`abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘`)
+	//sample := bytes.NewReader([]byte(`abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘abc⌘`))
+	sample := bytes.NewReader(ds)
 	dict := getVocabulary(sample)
 	vectorSize := len(dict)
 
@@ -37,6 +39,7 @@ func TestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	bkp := backup.Bytes()
+	t.Log(string(ds))
 	for i := 0; i < 4; i++ {
 		buf := bytes.NewBuffer(bkp)
 		predictNN, err := lstm.NewTrainedLSTM(buf)
