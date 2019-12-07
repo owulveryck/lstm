@@ -69,8 +69,8 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 				return err
 			}
 			vm.Reset()
+			fmt.Println(costVal)
 		}
-		fmt.Println(costVal)
 		if err := <-errC; err != nil {
 			if err != io.EOF {
 				return err
