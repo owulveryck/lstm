@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 
 	"github.com/cheggaaa/pb/v3"
 	"github.com/owulveryck/lstm"
@@ -62,6 +63,7 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 		pb.RegisterElement("epoch", pb.ElementString, false)
 		bar.Set("epoch", fmt.Sprintf("%v/%v", i, config.Epoch))
 
+		j := 0
 		for feed := range feedC {
 			xT := feed.T
 			err := setInputValues(model, y, xT)
@@ -83,7 +85,23 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 				return err
 			}
 			vm.Reset()
+			if j%5000 == 0 {
+				fmt.Println("backup")
+				f, err := os.Create(fmt.Sprintf("backup_%v_%v.bin", i, j))
+				if err != nil {
+					return err
+				}
+				nn.Save(f)
+				f.Close()
+			}
+			j++
 		}
+		f, err := os.Create(fmt.Sprintf("backup_%v.bin", i))
+		if err != nil {
+			return err
+		}
+		nn.Save(f)
+		f.Close()
 		bar.Finish()
 
 		if err := <-errC; err != nil {
