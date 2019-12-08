@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/cheggaaa/pb/v3"
 	"github.com/owulveryck/lstm"
 	"github.com/owulveryck/lstm/internal/text"
 	"gorgonia.org/gorgonia"
@@ -48,6 +49,7 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 	}
 	vm := gorgonia.NewTapeMachine(nn.G, gorgonia.BindDualValues(nn.Learnables()...))
 	defer vm.Close()
+
 	for i := 0; i < config.Epoch; i++ {
 		//		fmt.Printf("Epoch %v: ", i)
 		_, err := rdr.Seek(0, io.SeekStart)
@@ -55,6 +57,10 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 			return err
 		}
 		feedC, errC := text.Feeder(ctx, nn.Dict, rdr, config.BatchSize+1, config.Step)
+		bar := mytmpl.Start64(rdr.Size())
+		pb.RegisterElement("cost", pb.ElementString, false)
+		pb.RegisterElement("epoch", pb.ElementString, false)
+		bar.Set("epoch", fmt.Sprintf("%v/%v", i, config.Epoch))
 
 		for feed := range feedC {
 			xT := feed.T
@@ -68,6 +74,8 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 				cancel()
 				return err
 			}
+			bar.Set("cost", fmt.Sprintf("%2.2f", costVal.Data().(float64)))
+			bar.SetCurrent(feed.Position)
 
 			err = solver.Step(gorgonia.NodesToValueGrads(nn.Learnables()))
 			if err != nil {
@@ -76,7 +84,8 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 			}
 			vm.Reset()
 		}
-		fmt.Println(costVal)
+		bar.Finish()
+
 		if err := <-errC; err != nil {
 			if err != io.EOF {
 				return err
@@ -94,3 +103,7 @@ func generateY(g *gorgonia.ExprGraph, vectorSize, batchSize int) []*gorgonia.Nod
 	}
 	return y
 }
+
+// Full - preset with all default available elements
+// Example: 'Prefix 20/100 [-->______] 20% 1 p/s ETA 1m Suffix'
+var mytmpl pb.ProgressBarTemplate = `{{string . "prefix"}}Epoch {{string . "epoch"}} | Cost: {{string . "cost"}} | {{counters . }} {{bar . }} {{percent . }} {{speed . }} {{rtime . "ETA %s"}}{{string . "suffix"}}`
