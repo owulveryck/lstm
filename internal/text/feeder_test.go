@@ -34,7 +34,7 @@ func TestFeeder(t *testing.T) {
 	}()
 	i := 0
 	for x := range inputC {
-		assert.Equal(t, expectedVals, x.Data().([]float64), "data not equal")
+		assert.Equal(t, expectedVals, x.T.Data().([]float64), "data not equal")
 		i++
 	}
 	if i != 5 {
@@ -48,7 +48,7 @@ func ExampleFeeder() {
 	testinput := bytes.NewReader([]byte(`cba⌘`))
 	inputC, _ := Feeder(context.Background(), dict, testinput, 4, 1)
 	x := <-inputC
-	fmt.Println(x)
+	fmt.Println(x.T)
 	// Output:⎡0  0  1  0⎤
 	// ⎢0  1  0  0⎥
 	// ⎢1  0  0  0⎥

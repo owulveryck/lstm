@@ -12,6 +12,12 @@ import (
 	"gorgonia.org/gorgonia"
 )
 
+type info struct {
+	Epoch     int
+	Cost      gorgonia.Value
+	Knowledge []byte
+}
+
 func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 	// Create a new context
 	ctx := context.Background()
@@ -50,8 +56,8 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 		}
 		feedC, errC := text.Feeder(ctx, nn.Dict, rdr, config.BatchSize+1, config.Step)
 
-		for xT := range feedC {
-
+		for feed := range feedC {
+			xT := feed.T
 			err := setInputValues(model, y, xT)
 			if err != nil {
 				cancel()
@@ -69,8 +75,8 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 				return err
 			}
 			vm.Reset()
-			//			fmt.Println(costVal)
 		}
+		fmt.Println(costVal)
 		if err := <-errC; err != nil {
 			if err != io.EOF {
 				return err
