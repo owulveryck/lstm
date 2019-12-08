@@ -7,8 +7,11 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/owulveryck/lstm"
+	"golang.org/x/exp/rand"
+	"gonum.org/v1/gonum/stat/distuv"
 	"gorgonia.org/gorgonia"
 	"gorgonia.org/tensor"
 )
@@ -81,7 +84,10 @@ func main() {
 			}
 			gorgonia.Let(model.H[0], model.H[1].Value())
 			gorgonia.Let(model.C[0], model.C[1].Value())
-			fmt.Printf("%c", getRune(model.Y[0].Value().Data().([]float64), nn.Dict))
+			p := model.Y[0].Value().Data().([]float64)
+			sample := distuv.NewCategorical(p, rand.New(rand.NewSource(uint64(time.Now().UnixNano()))))
+			rnd := int(sample.Rand())
+			fmt.Printf("%c", nn.Dict[rnd])
 			vm.Reset()
 		}
 		fmt.Printf("\n")
