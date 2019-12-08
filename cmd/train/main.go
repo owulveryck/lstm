@@ -10,9 +10,9 @@ import (
 )
 
 type configuration struct {
-	HiddenSize int     `envconfig:"HIDDEN_SIZE" default:"1024" required:"true"`
+	HiddenSize int     `envconfig:"HIDDEN_SIZE" default:"100" required:"true"`
 	Epoch      int     `envconfig:"EPOCH" default:"100" required:"true"`
-	BatchSize  int     `envconfig:"BATCH_SIZE" default:"100" required:"true"`
+	BatchSize  int     `envconfig:"BATCH_SIZE" default:"25" required:"true"`
 	Step       int     `envconfig:"STEP" default:"1" required:"true"`
 	Learnrate  float64 `envconfig:"LEARNRATE" default:"0.01" required:"true"`
 	L2reg      float64 `envconfig:"L2REG" default:"0.000001" required:"true"`

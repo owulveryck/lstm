@@ -74,7 +74,7 @@ func run(nn *lstm.LSTM, input io.Reader, config configuration) error {
 				cancel()
 				return err
 			}
-			bar.Set("cost", fmt.Sprintf("%2.2f", costVal.Data().(float64)))
+			bar.Set("cost", fmt.Sprintf("%2.4f", costVal.Data().(float64)))
 			bar.SetCurrent(feed.Position)
 
 			err = solver.Step(gorgonia.NodesToValueGrads(nn.Learnables()))
